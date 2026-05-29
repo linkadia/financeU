@@ -25,29 +25,34 @@ export default function OnboardingHeader({ currentStep, totalSteps = 4, progress
         />
       </div>
 
-      {/* TopAppBar */}
-      <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-xl border-b border-white/10 flex justify-between items-center w-full px-container-padding h-16 mt-1">
-        <div className="flex items-center gap-stack-md">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95 duration-100"
-            aria-label={t('common.back')}
-          >
-            <span className="material-symbols-outlined text-on-surface">arrow_back</span>
-          </button>
+      <header className="sticky top-0 z-50 mt-1 flex h-16 w-full items-center justify-between border-b border-white/10 bg-surface/80 px-container-padding backdrop-blur-xl">
+        <div className="flex items-center">
           <img
             src={LOGO_URL}
             alt="FinanU Logo"
             className="h-6 md:h-8 object-contain"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center">
           <LanguageSwitcher compact />
+        </div>
+      </header>
+
+      <div className="mx-auto flex w-full max-w-lg items-center justify-between px-container-padding py-stack-md">
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface active:scale-95"
+          aria-label={t('common.back')}
+          type="button"
+        >
+          <span className="material-symbols-outlined">arrow_back</span>
+        </button>
+        <div className="flex items-center gap-2">
           <span className="font-label-md text-on-surface-variant bg-surface-container px-3 py-1 rounded-full">
             {t('onboarding.stepOf', { current: currentStep, total: totalSteps })}
           </span>
         </div>
-      </header>
+      </div>
     </>
   );
 }

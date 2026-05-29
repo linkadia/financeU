@@ -1,5 +1,6 @@
 from pathlib import Path
 from os import getenv
+from importlib.util import find_spec
 
 # pyrefly: ignore [missing-import]
 from dotenv import load_dotenv
@@ -38,6 +39,8 @@ INSTALLED_APPS = [
     "learning",
 ]
 
+WHITENOISE_AVAILABLE = find_spec("whitenoise") is not None
+
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -48,6 +51,9 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+if WHITENOISE_AVAILABLE:
+    MIDDLEWARE.insert(2, "whitenoise.middleware.WhiteNoiseMiddleware")
 
 ROOT_URLCONF = "finan3_backend.urls"
 
@@ -68,12 +74,31 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "finan3_backend.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+DB_ENGINE = getenv("DB_ENGINE", "sqlite").lower()
+
+if DB_ENGINE == "mysql":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": getenv("DB_NAME"),
+            "USER": getenv("DB_USER"),
+            "PASSWORD": getenv("DB_PASSWORD"),
+            "HOST": getenv("DB_HOST", "127.0.0.1"),
+            "PORT": getenv("DB_PORT", "3306"),
+            "CONN_MAX_AGE": int(getenv("DB_CONN_MAX_AGE", "60")),
+            "OPTIONS": {
+                "charset": "utf8mb4",
+                "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / getenv("SQLITE_NAME", "db.sqlite3"),
+        }
+    }
 
 LANGUAGE_CODE = "es-es"
 TIME_ZONE = "Europe/Madrid"
@@ -81,6 +106,14 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+if WHITENOISE_AVAILABLE:
+    STORAGES = {
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -91,6 +124,10 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
+CSRF_COOKIE_SECURE = env_bool("DJANGO_CSRF_COOKIE_SECURE", not DEBUG)
+SESSION_COOKIE_SECURE = env_bool("DJANGO_SESSION_COOKIE_SECURE", not DEBUG)
+SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", False)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Development keeps a local in-memory cache so the app starts without Redis.
 # Production can set REDIS_URL to share throttle counters across app workers.

@@ -68,17 +68,20 @@ export default function Signup() {
         <Link className="flex items-center gap-base text-primary" to="/" aria-label={t('auth.backToLogin')}>
           <img alt="FinanU Logo" className="h-8 w-auto object-contain" src={LOGO_URL} />
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center">
           <LanguageSwitcher compact />
-          <Link
-            className="rounded-full p-base text-on-surface-variant transition-colors hover:bg-surface-container-high"
-            to="/"
-            aria-label={t('common.back')}
-          >
-            <span className="material-symbols-outlined">arrow_back</span>
-          </Link>
         </div>
       </header>
+
+      <div className="mx-auto flex w-full max-w-4xl items-center px-container-padding pt-stack-md">
+        <Link
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface active:scale-95"
+          to="/"
+          aria-label={t('common.back')}
+        >
+          <span className="material-symbols-outlined">arrow_back</span>
+        </Link>
+      </div>
 
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center px-container-padding py-stack-lg sm:justify-center sm:py-10">
         <section className="w-full max-w-md text-center">

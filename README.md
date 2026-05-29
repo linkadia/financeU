@@ -130,6 +130,8 @@ finanU/
 - django-cors-headers.
 - python-dotenv.
 - SQLite en desarrollo.
+- MySQL preparado para produccion mediante variables de entorno.
+- Gunicorn + Docker preparados para hosting.
 
 ## Instalación
 
@@ -203,9 +205,14 @@ Ajusta estas variables a tu IP local:
 ```env
 DJANGO_DEBUG=True
 DJANGO_SECRET_KEY=dev-secret-key-change-in-production
-DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,192.168.0.192
-CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://192.168.0.192:5173
-CSRF_TRUSTED_ORIGINS=http://192.168.0.192:5173
+DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+CSRF_TRUSTED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+DJANGO_CSRF_COOKIE_SECURE=False
+DJANGO_SESSION_COOKIE_SECURE=False
+DJANGO_SECURE_SSL_REDIRECT=False
+DB_ENGINE=sqlite
+SQLITE_NAME=db.sqlite3
 ```
 
 ### `frontend/.env`
@@ -213,6 +220,128 @@ CSRF_TRUSTED_ORIGINS=http://192.168.0.192:5173
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8001/api
 ```
+
+## Preparacion para Despliegue
+
+El desarrollo local sigue usando SQLite por defecto. No hace falta Docker para probar en tu PC:
+
+```bash
+cd backend
+python manage.py runserver 8001
+
+cd frontend
+npm run dev
+```
+
+Cuando tengamos hosting en AWS, la configuracion preparada permite mover el backend a MySQL/RDS cambiando variables de entorno, sin tocar codigo.
+
+### Variables de produccion del backend
+
+Ejemplo para `backend/.env.production` o para variables configuradas directamente en el servicio de AWS:
+
+```env
+DJANGO_DEBUG=False
+DJANGO_SECRET_KEY=replace-with-a-long-random-secret
+DJANGO_ALLOWED_HOSTS=api.tudominio.com,tudominio.com
+CORS_ALLOWED_ORIGINS=https://tudominio.com,https://www.tudominio.com
+CSRF_TRUSTED_ORIGINS=https://tudominio.com,https://www.tudominio.com
+DJANGO_CSRF_COOKIE_SECURE=True
+DJANGO_SESSION_COOKIE_SECURE=True
+DJANGO_SECURE_SSL_REDIRECT=False
+
+DB_ENGINE=mysql
+DB_NAME=finanu
+DB_USER=finanu_user
+DB_PASSWORD=replace-with-real-password
+DB_HOST=replace-with-rds-endpoint.amazonaws.com
+DB_PORT=3306
+DB_CONN_MAX_AGE=60
+```
+
+No subir `backend/.env.production` al repositorio. Las credenciales reales deben vivir en variables del hosting, AWS Secrets Manager, Parameter Store o un fichero `.env` local no versionado.
+
+### Backend con Docker
+
+El backend incluye:
+
+- `backend/Dockerfile`: imagen de produccion con Django, Gunicorn, MySQL client y collectstatic.
+- `backend/requirements-prod.txt`: dependencias extra para produccion.
+- `docker-compose.production.example.yml`: ejemplo para levantar el contenedor con un `.env.production`.
+
+Construir imagen:
+
+```bash
+docker build -t finanu-backend ./backend
+```
+
+Ejecutar localmente una imagen de produccion usando variables:
+
+```bash
+docker run --env-file backend/.env.production -p 8001:8001 finanu-backend
+```
+
+Con Docker Compose:
+
+```bash
+docker compose -f docker-compose.production.example.yml up --build
+```
+
+Antes de servir trafico en produccion, ejecutar migraciones contra MySQL/RDS:
+
+```bash
+docker compose -f docker-compose.production.example.yml run --rm backend python manage.py migrate
+```
+
+Crear superusuario si hace falta:
+
+```bash
+docker compose -f docker-compose.production.example.yml run --rm backend python manage.py createsuperuser
+```
+
+### Frontend en produccion
+
+El frontend de Vite se puede desplegar como archivos estaticos:
+
+```bash
+cd frontend
+npm install
+npm run build
+```
+
+La carpeta `frontend/dist/` se puede publicar en S3 + CloudFront, Amplify, Netlify, Vercel o un Nginx. En produccion, `frontend/.env.production` deberia apuntar al dominio real de la API:
+
+```env
+VITE_API_BASE_URL=https://api.tudominio.com/api
+```
+
+### Migrar datos de SQLite a MySQL
+
+Cuando la base MySQL/RDS este creada:
+
+1. Mantener una copia de seguridad de `backend/db.sqlite3`.
+2. Exportar los datos actuales desde SQLite:
+
+```bash
+cd backend
+python manage.py dumpdata --natural-foreign --natural-primary --exclude contenttypes --exclude auth.permission > data.json
+```
+
+3. Cambiar variables de entorno a MySQL (`DB_ENGINE=mysql`, `DB_HOST`, `DB_NAME`, etc.).
+4. Crear tablas en MySQL:
+
+```bash
+python manage.py migrate
+```
+
+5. Importar los datos:
+
+```bash
+python manage.py loaddata data.json
+```
+
+6. Probar login, registro, onboarding y vistas principales antes de apuntar el dominio publico.
+
+Si aparecen conflictos de claves o datos duplicados, se vacia la base MySQL nueva y se repite la importacion. No borrar la SQLite original hasta confirmar que todo funciona.
 
 ## Scripts Útiles
 

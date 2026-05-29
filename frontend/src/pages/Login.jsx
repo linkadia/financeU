@@ -18,7 +18,6 @@ export default function Login() {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
   const [error, setError] = useState('');
   const [retryAfter, setRetryAfter] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,36 +68,8 @@ export default function Login() {
         <div className="flex items-center gap-base text-primary">
           <img alt="FinanU Logo" className="h-8 w-auto object-contain" src={LOGO_URL} />
         </div>
-        <div className="relative flex items-center gap-3">
+        <div className="flex items-center">
           <LanguageSwitcher compact />
-          <button
-            className="rounded-full p-base text-on-surface-variant transition-colors hover:bg-surface-container-high"
-            type="button"
-            aria-label={t('common.help')}
-            aria-expanded={showHelp}
-            onClick={() => setShowHelp((current) => !current)}
-          >
-            <span className="material-symbols-outlined">help_outline</span>
-          </button>
-
-          {showHelp && (
-            <section className="absolute right-0 top-12 z-[80] w-[min(320px,calc(100vw-32px))] rounded-xl border border-white/10 bg-surface-container p-4 text-left shadow-2xl">
-              <div className="mb-2 flex items-start justify-between gap-3">
-                <h2 className="text-[18px] font-semibold leading-6 text-on-surface">{t('auth.aboutTitle')}</h2>
-                <button
-                  className="-mr-1 -mt-1 rounded-full p-1 text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface"
-                  type="button"
-                  aria-label={t('common.close')}
-                  onClick={() => setShowHelp(false)}
-                >
-                  <span className="material-symbols-outlined text-[20px]">close</span>
-                </button>
-              </div>
-              <p className="text-[14px] leading-5 text-on-surface-variant">
-                {t('auth.aboutText')}
-              </p>
-            </section>
-          )}
         </div>
       </header>
 

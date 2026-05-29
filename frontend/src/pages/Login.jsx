@@ -8,6 +8,10 @@ import { getCurrentUser, setCurrentUser } from '../utils/session';
 const LOGO_URL =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuBEVed2cAWQhnZmCYEo8c7WnwYIxlNA8zO2VYCdovKuhg8KE8xlG8sQc2GXEJnMN9ixwYTJD6kYNpQY5zWsG8phfAnIPEbAVRwXXhi7uF2IfyHaMDGbrS9cbxmQ1uKXP6_JVfyznFvUHS4BGbnL8Lj_2hsO94H0FvU3lASYXdyoEWPjreBt9DIb-X8ccHLAdA3bkAYarOgY9tIlEr69X5ypl3nQV1XMAKsFN-5xraYqqsprwwB8RJ_DjBwylcNmUSw_KIjXOL-fLu0L';
 
+function getThrottleMessage(seconds) {
+  return `Has realizado demasiados intentos. Por seguridad, intentalo de nuevo en ${seconds} segundos.`;
+}
+
 export default function Login() {
   const navigate = useNavigate();
   const { t } = useI18n();
@@ -16,6 +20,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [error, setError] = useState('');
+  const [retryAfter, setRetryAfter] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -25,16 +30,33 @@ export default function Login() {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    if (retryAfter <= 0) return undefined;
+
+    setError(getThrottleMessage(retryAfter));
+    const timeoutId = window.setTimeout(() => {
+      setRetryAfter((current) => Math.max(current - 1, 0));
+    }, 1000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [retryAfter]);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (retryAfter > 0) return;
+
     setIsSubmitting(true);
 
     try {
       const user = await loginUser({ identifier: identifier.trim(), password });
       setCurrentUser(user);
       setError('');
+      setRetryAfter(0);
       navigate(user.onboarding_completed ? '/dashboard' : '/onboarding/step1');
     } catch (requestError) {
+      if (requestError.status === 429 && requestError.secondsRemaining) {
+        setRetryAfter(requestError.secondsRemaining);
+      }
       setError(requestError.message);
     } finally {
       setIsSubmitting(false);
@@ -103,7 +125,10 @@ export default function Login() {
                 value={identifier}
                 onChange={(event) => {
                   setIdentifier(event.target.value);
-                  if (error) setError('');
+                  if (error) {
+                    setError('');
+                    setRetryAfter(0);
+                  }
                 }}
               />
             </span>
@@ -122,7 +147,10 @@ export default function Login() {
                   value={password}
                   onChange={(event) => {
                     setPassword(event.target.value);
-                    if (error) setError('');
+                    if (error) {
+                      setError('');
+                      setRetryAfter(0);
+                    }
                   }}
                 />
                 <button
@@ -146,7 +174,7 @@ export default function Login() {
           </div>
 
           {error && (
-            <div className="rounded-xl border border-error/40 bg-error-container/30 px-4 py-3 font-label-md text-label-md text-on-error-container" role="alert">
+            <div className="rounded-xl border border-error/40 bg-error-container/30 px-4 py-3 font-label-md text-label-md text-on-error-container" role="alert" aria-live="polite">
               {error}
             </div>
           )}
@@ -154,7 +182,7 @@ export default function Login() {
           <button
             className="w-full rounded-xl bg-[#f2ae2e] py-4 font-bold text-on-primary-container shadow-lg shadow-primary/10 transition-all duration-200 hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || retryAfter > 0}
           >
             {isSubmitting ? t('auth.signingIn') : t('auth.login')}
           </button>

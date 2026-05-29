@@ -14,8 +14,13 @@ async function request(path, options) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const detail = data.detail ?? Object.values(data).flat().join(' ');
-    throw new Error(detail || translations[defaultLanguage].common.somethingWrong);
+    const detail = data.message ?? data.detail ?? Object.values(data).flat().join(' ');
+    const error = new Error(detail || translations[defaultLanguage].common.somethingWrong);
+    error.status = response.status;
+    error.code = data.error;
+    error.secondsRemaining = data.seconds_remaining;
+    error.payload = data;
+    throw error;
   }
 
   return data;

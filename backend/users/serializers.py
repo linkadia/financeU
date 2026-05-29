@@ -12,6 +12,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "username",
             "email",
             "display_name",
+            "estado",
+            "fecha_renovacion",
             "onboarding_completed",
             "onboarding_interests",
             "onboarding_risk_profile",
@@ -23,6 +25,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "id",
             "created_at",
+            "estado",
+            "fecha_renovacion",
             "onboarding_completed",
             "onboarding_interests",
             "onboarding_risk_profile",
@@ -55,6 +59,8 @@ class UserSettingsSerializer(serializers.ModelSerializer):
             "username",
             "email",
             "display_name",
+            "estado",
+            "fecha_renovacion",
             "onboarding_completed",
             "onboarding_interests",
             "onboarding_risk_profile",
@@ -63,7 +69,7 @@ class UserSettingsSerializer(serializers.ModelSerializer):
             "current_password",
             "new_password",
         ]
-        read_only_fields = ["id", "onboarding_completed"]
+        read_only_fields = ["id", "estado", "fecha_renovacion", "onboarding_completed"]
 
     def validate(self, attrs):
         current_password = attrs.pop("current_password", "")

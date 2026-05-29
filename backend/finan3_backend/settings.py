@@ -1,11 +1,20 @@
 from pathlib import Path
+from os import getenv
+
+# pyrefly: ignore [missing-import]
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
-SECRET_KEY = "dev-secret-key-change-in-production"
-DEBUG = True
 
-ALLOWED_HOSTS = []
+def env_list(name, default=""):
+    return [item.strip() for item in getenv(name, default).split(",") if item.strip()]
+
+SECRET_KEY = getenv("DJANGO_SECRET_KEY", "dev-secret-key-change-in-production")
+DEBUG = getenv("DJANGO_DEBUG", "True").lower() == "true"
+
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -22,6 +31,7 @@ INSTALLED_APPS = [
     "content",
     "markets",
     "subscriptions",
+    "learning",
 ]
 
 MIDDLEWARE = [
@@ -73,7 +83,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    *env_list("CORS_ALLOWED_ORIGINS"),
 ]
+
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [

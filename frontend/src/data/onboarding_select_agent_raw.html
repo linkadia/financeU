@@ -124,14 +124,17 @@
     </script>
 </head>
 <body class="bg-background text-on-surface font-body-md min-h-screen flex flex-col">
+<div class="fixed top-0 left-0 w-full h-1 bg-surface-container-highest z-[60]">
+<div class="h-full bg-secondary w-1/4 transition-all duration-700 ease-out" id="progress-bar"></div>
+</div>
 <!-- Top App Bar -->
-<header class="bg-surface/80 dark:bg-surface/80 backdrop-blur-xl docked full-width top-0 sticky z-50 border-b border-white/10 shadow-sm flex justify-between items-center w-full px-container-padding h-16">
+<header class="bg-surface/80 dark:bg-surface/80 backdrop-blur-xl docked full-width top-0 sticky z-50 border-b border-white/10 shadow-sm flex justify-between items-center w-full px-container-padding h-16 mt-1">
 <div class="flex items-center gap-base text-primary"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEVed2cAWQhnZmCYEo8c7WnwYIxlNA8zO2VYCdovKuhg8KE8xlG8sQc2GXEJnMN9ixwYTJD6kYNpQY5zWsG8phfAnIPEbAVRwXXhi7uF2IfyHaMDGbrS9cbxmQ1uKXP6_JVfyznFvUHS4BGbnL8Lj_2hsO94H0FvU3lASYXdyoEWPjreBt9DIb-X8ccHLAdA3bkAYarOgY9tIlEr69X5ypl3nQV1XMAKsFN-5xraYqqsprwwB8RJ_DjBwylcNmUSw_KIjXOL-fLu0L" alt="FinanU Logo" class="h-8 w-auto"></div>
 <div class="flex items-center gap-stack-md text-on-surface-variant">
-<button class="material-symbols-outlined hover:bg-surface-container-high transition-colors p-base rounded-full" data-icon="notifications">notifications</button>
+<span class="font-label-md text-on-surface-variant bg-surface-container px-3 py-1 rounded-full">Step 1 of 4</span>
 </div>
 </header>
-<main class="flex-grow px-container-padding py-stack-lg max-w-4xl mx-auto w-full">
+<main class="flex-grow px-container-padding py-stack-lg max-w-2xl mx-auto w-full">
 <!-- Welcome Header -->
 <section class="text-center mb-12 space-y-stack-sm">
 <h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Welcome to FinanU</h1>

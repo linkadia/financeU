@@ -1,14 +1,16 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useI18n } from '../../i18n/I18nContext';
 
 export default function BottomNav() {
   const location = useLocation();
   const currentPath = location.pathname;
+  const { t } = useI18n();
 
   const navItems = [
-    { path: '/dashboard', icon: 'rss_feed', label: 'Feed' },
-    { path: '/learn', icon: 'school', label: 'Learn', fill: true },
-    { path: '/profile', icon: 'person', label: 'Profile' }
+    { path: '/dashboard', icon: 'rss_feed', label: t('nav.feed') },
+    { path: '/learn', icon: 'school', label: t('nav.learn'), fill: true },
+    { path: '/profile', icon: 'person', label: t('nav.profile') }
   ];
 
   return (

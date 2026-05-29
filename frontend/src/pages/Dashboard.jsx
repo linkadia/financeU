@@ -3,11 +3,19 @@ import TopBar from '../components/layout/TopBar';
 import BottomNav from '../components/layout/BottomNav';
 import GlassCard from '../components/ui/GlassCard';
 import CategoryChips from '../components/ui/CategoryChips';
-import { featuredArticle, dailyFeed, microcourse } from '../data/mockDashboard';
+import { getDashboardData } from '../data/localizedDashboard';
+import { useI18n } from '../i18n/I18nContext';
 
 export default function Dashboard() {
-  const [activeCategory, setActiveCategory] = useState('All');
-  const categories = ['All', 'Crypto', 'Forex', 'My Microcourses'];
+  const { t } = useI18n();
+  const [activeCategory, setActiveCategory] = useState('all');
+  const categories = [
+    { id: 'all', label: t('dashboard.all') },
+    { id: 'crypto', label: t('dashboard.crypto') },
+    { id: 'forex', label: t('dashboard.forex') },
+    { id: 'microcourses', label: t('dashboard.myMicrocourses') },
+  ];
+  const { featuredArticle, dailyFeed, microcourse } = getDashboardData(t);
 
   return (
     <div className="bg-background text-on-surface min-h-screen pb-24">
@@ -45,15 +53,15 @@ export default function Dashboard() {
 
             <button className="w-full py-3 bg-secondary text-on-secondary rounded-lg font-title-md text-title-md flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-[0_4px_12px_rgba(255,186,60,0.2)]">
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>play_circle</span>
-              Play Audio Summary
+              {t('dashboard.playAudioSummary')}
             </button>
           </div>
         </section>
 
         <div className="space-y-stack-md">
           <div className="flex items-center justify-between">
-            <h3 className="font-title-md text-title-md text-on-surface">Daily Feed</h3>
-            <span className="font-label-sm text-label-sm text-secondary">View All</span>
+            <h3 className="font-title-md text-title-md text-on-surface">{t('dashboard.dailyFeed')}</h3>
+            <span className="font-label-sm text-label-sm text-secondary">{t('dashboard.viewAll')}</span>
           </div>
 
           {dailyFeed.map((item) => (
@@ -62,7 +70,7 @@ export default function Dashboard() {
               <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent"></div>
               <div className="absolute top-4 left-4 flex gap-2">
                 <span className={`px-3 py-1 rounded-full text-on-tertiary font-label-sm text-label-sm font-bold uppercase ${item.type === 'Crypto Alert' ? 'bg-tertiary text-on-tertiary' : 'bg-secondary-container text-on-secondary-container'}`}>{item.type}</span>
-                {item.isNew && <span className="px-3 py-1 rounded-full bg-secondary text-on-secondary font-label-sm text-label-sm font-bold uppercase animate-pulse">New</span>}
+                {item.isNew && <span className="px-3 py-1 rounded-full bg-secondary text-on-secondary font-label-sm text-label-sm font-bold uppercase animate-pulse">{t('dashboard.new')}</span>}
               </div>
               <div className="absolute bottom-6 left-6 right-6 space-y-3">
                 <div className="flex items-center gap-3">
@@ -82,14 +90,14 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-secondary">school</span>
-                <span className="text-secondary font-label-sm text-label-sm uppercase font-bold">Microcourse of the Day</span>
+                <span className="text-secondary font-label-sm text-label-sm uppercase font-bold">{t('dashboard.microcourseOfDay')}</span>
               </div>
               <span className="text-on-surface-variant font-label-sm text-label-sm">{microcourse.duration}</span>
             </div>
             <h4 className="font-title-md text-title-md text-on-surface">{microcourse.title}</h4>
             <div className="space-y-2">
               <div className="flex justify-between font-label-sm text-label-sm">
-                <span className="text-on-surface-variant">Your Progress</span>
+                <span className="text-on-surface-variant">{t('dashboard.yourProgress')}</span>
                 <span className="text-secondary">{microcourse.progress}%</span>
               </div>
               <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
@@ -97,7 +105,7 @@ export default function Dashboard() {
               </div>
             </div>
             <button className="w-full flex items-center justify-between p-4 bg-surface-container-high rounded-lg hover:bg-surface-variant transition-all active:scale-[0.98]">
-              <span className="font-body-md text-body-md font-semibold">Resume Learning</span>
+              <span className="font-body-md text-body-md font-semibold">{t('dashboard.resumeLearning')}</span>
               <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
                 <span className="material-symbols-outlined text-on-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
               </div>
@@ -109,4 +117,3 @@ export default function Dashboard() {
     </div>
   );
 }
-

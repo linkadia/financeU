@@ -1,0 +1,359 @@
+[
+  {
+    "model": "learning.learningcategory",
+    "pk": 1,
+    "fields": {
+      "name": "Crypto",
+      "slug": "crypto",
+      "description": "Blockchain, tokens, wallets, DeFi and market basics.",
+      "icon": "bitcoin",
+      "order": 1,
+      "is_active": true
+    }
+  },
+  {
+    "model": "learning.learningcategory",
+    "pk": 2,
+    "fields": {
+      "name": "Forex",
+      "slug": "forex",
+      "description": "Currency markets, pairs, risk and trading foundations.",
+      "icon": "chart-candlestick",
+      "order": 2,
+      "is_active": true
+    }
+  },
+  {
+    "model": "learning.learningcategory",
+    "pk": 3,
+    "fields": {
+      "name": "Personal Finance",
+      "slug": "personal-finance",
+      "description": "Budgeting, saving, debt and long-term money habits.",
+      "icon": "wallet",
+      "order": 3,
+      "is_active": true
+    }
+  },
+  {
+    "model": "learning.coursetype",
+    "pk": 1,
+    "fields": {
+      "name": "Quick Start",
+      "slug": "quick-start",
+      "description": "Short introductory courses for fast onboarding.",
+      "order": 1,
+      "is_active": true
+    }
+  },
+  {
+    "model": "learning.coursetype",
+    "pk": 2,
+    "fields": {
+      "name": "Fundamentals",
+      "slug": "fundamentals",
+      "description": "Core concepts explained step by step.",
+      "order": 2,
+      "is_active": true
+    }
+  },
+  {
+    "model": "learning.coursetype",
+    "pk": 3,
+    "fields": {
+      "name": "Strategy",
+      "slug": "strategy",
+      "description": "Applied lessons for decision-making and practice.",
+      "order": 3,
+      "is_active": true
+    }
+  },
+  {
+    "model": "learning.learninglevel",
+    "pk": 1,
+    "fields": {
+      "name": "Beginner",
+      "slug": "beginner",
+      "order": 1,
+      "is_active": true
+    }
+  },
+  {
+    "model": "learning.learninglevel",
+    "pk": 2,
+    "fields": {
+      "name": "Intermediate",
+      "slug": "intermediate",
+      "order": 2,
+      "is_active": true
+    }
+  },
+  {
+    "model": "learning.learninglevel",
+    "pk": 3,
+    "fields": {
+      "name": "Advanced",
+      "slug": "advanced",
+      "order": 3,
+      "is_active": true
+    }
+  },
+  {
+    "model": "learning.course",
+    "pk": 1,
+    "fields": {
+      "title": "Crypto Basics",
+      "slug": "crypto-basics",
+      "description": "A beginner-friendly introduction to cryptocurrencies and wallets.",
+      "category": 1,
+      "course_type": 1,
+      "level": 1,
+      "thumbnail_url": "https://img.youtube.com/vi/SSo_EIwHSd4/hqdefault.jpg",
+      "estimated_duration_minutes": 24,
+      "order": 1,
+      "is_active": true,
+      "created_at": "2026-05-29T00:00:00Z",
+      "updated_at": "2026-05-29T00:00:00Z"
+    }
+  },
+  {
+    "model": "learning.course",
+    "pk": 2,
+    "fields": {
+      "title": "Forex Foundations",
+      "slug": "forex-foundations",
+      "description": "Understand currency pairs, pips, leverage and basic risk management.",
+      "category": 2,
+      "course_type": 2,
+      "level": 1,
+      "thumbnail_url": "https://img.youtube.com/vi/YGUyI6K3eWY/hqdefault.jpg",
+      "estimated_duration_minutes": 30,
+      "order": 2,
+      "is_active": true,
+      "created_at": "2026-05-29T00:00:00Z",
+      "updated_at": "2026-05-29T00:00:00Z"
+    }
+  },
+  {
+    "model": "learning.course",
+    "pk": 3,
+    "fields": {
+      "title": "Personal Finance Starter",
+      "slug": "personal-finance-starter",
+      "description": "Build a practical budget and start improving your financial habits.",
+      "category": 3,
+      "course_type": 1,
+      "level": 1,
+      "thumbnail_url": "https://img.youtube.com/vi/HQzoZfc3GwQ/hqdefault.jpg",
+      "estimated_duration_minutes": 26,
+      "order": 3,
+      "is_active": true,
+      "created_at": "2026-05-29T00:00:00Z",
+      "updated_at": "2026-05-29T00:00:00Z"
+    }
+  },
+  {
+    "model": "learning.lesson",
+    "pk": 1,
+    "fields": {
+      "course": 1,
+      "title": "What is Bitcoin?",
+      "slug": "what-is-bitcoin",
+      "description": "A short explanation of Bitcoin as a decentralized digital asset.",
+      "youtube_url": "https://www.youtube.com/watch?v=Gc2en3nHxA4",
+      "youtube_video_id": "Gc2en3nHxA4",
+      "duration_minutes": 12,
+      "summary": "Bitcoin is introduced as a peer-to-peer monetary network with limited supply.",
+      "order": 1,
+      "is_active": true,
+      "created_at": "2026-05-29T00:00:00Z",
+      "updated_at": "2026-05-29T00:00:00Z"
+    }
+  },
+  {
+    "model": "learning.lesson",
+    "pk": 2,
+    "fields": {
+      "course": 1,
+      "title": "Crypto Wallets Explained",
+      "slug": "crypto-wallets-explained",
+      "description": "Learn what wallets store and why private keys matter.",
+      "youtube_url": "https://www.youtube.com/watch?v=AQO7KePXUEQ",
+      "youtube_video_id": "AQO7KePXUEQ",
+      "duration_minutes": 12,
+      "summary": "Wallets manage keys, not coins, and key security is essential.",
+      "order": 2,
+      "is_active": true,
+      "created_at": "2026-05-29T00:00:00Z",
+      "updated_at": "2026-05-29T00:00:00Z"
+    }
+  },
+  {
+    "model": "learning.lesson",
+    "pk": 3,
+    "fields": {
+      "course": 2,
+      "title": "Currency Pairs",
+      "slug": "currency-pairs",
+      "description": "Understand base and quote currencies in the forex market.",
+      "youtube_url": "https://www.youtube.com/watch?v=YGUyI6K3eWY",
+      "youtube_video_id": "YGUyI6K3eWY",
+      "duration_minutes": 15,
+      "summary": "A currency pair expresses the price of one currency in another.",
+      "order": 1,
+      "is_active": true,
+      "created_at": "2026-05-29T00:00:00Z",
+      "updated_at": "2026-05-29T00:00:00Z"
+    }
+  },
+  {
+    "model": "learning.lesson",
+    "pk": 4,
+    "fields": {
+      "course": 2,
+      "title": "Risk in Forex",
+      "slug": "risk-in-forex",
+      "description": "A practical overview of leverage, position size and stop losses.",
+      "youtube_url": "https://www.youtube.com/watch?v=0hL6ywQzE78",
+      "youtube_video_id": "0hL6ywQzE78",
+      "duration_minutes": 15,
+      "summary": "Risk management matters more than predicting every market move.",
+      "order": 2,
+      "is_active": true,
+      "created_at": "2026-05-29T00:00:00Z",
+      "updated_at": "2026-05-29T00:00:00Z"
+    }
+  },
+  {
+    "model": "learning.lesson",
+    "pk": 5,
+    "fields": {
+      "course": 3,
+      "title": "Budgeting Basics",
+      "slug": "budgeting-basics",
+      "description": "Learn how to separate income, fixed expenses and flexible spending.",
+      "youtube_url": "https://www.youtube.com/watch?v=sVKQn2I4HDM",
+      "youtube_video_id": "sVKQn2I4HDM",
+      "duration_minutes": 13,
+      "summary": "A budget is a plan for assigning every euro a job before spending it.",
+      "order": 1,
+      "is_active": true,
+      "created_at": "2026-05-29T00:00:00Z",
+      "updated_at": "2026-05-29T00:00:00Z"
+    }
+  },
+  {
+    "model": "learning.lesson",
+    "pk": 6,
+    "fields": {
+      "course": 3,
+      "title": "Emergency Funds",
+      "slug": "emergency-funds",
+      "description": "Understand why emergency savings reduce financial stress.",
+      "youtube_url": "https://www.youtube.com/watch?v=fVToMS2Q3XQ",
+      "youtube_video_id": "fVToMS2Q3XQ",
+      "duration_minutes": 13,
+      "summary": "Emergency funds protect your plan from unexpected expenses.",
+      "order": 2,
+      "is_active": true,
+      "created_at": "2026-05-29T00:00:00Z",
+      "updated_at": "2026-05-29T00:00:00Z"
+    }
+  },
+  {
+    "model": "learning.lessonquiz",
+    "pk": 1,
+    "fields": {
+      "lesson": 1,
+      "question": "What is one key characteristic of Bitcoin?",
+      "explanation": "Bitcoin runs on a decentralized network and has a limited supply schedule.",
+      "is_active": true,
+      "created_at": "2026-05-29T00:00:00Z",
+      "updated_at": "2026-05-29T00:00:00Z"
+    }
+  },
+  {
+    "model": "learning.lessonquiz",
+    "pk": 2,
+    "fields": {
+      "lesson": 2,
+      "question": "What does a crypto wallet primarily manage?",
+      "explanation": "Wallets manage cryptographic keys that allow users to control funds.",
+      "is_active": true,
+      "created_at": "2026-05-29T00:00:00Z",
+      "updated_at": "2026-05-29T00:00:00Z"
+    }
+  },
+  {
+    "model": "learning.lessonquiz",
+    "pk": 3,
+    "fields": {
+      "lesson": 3,
+      "question": "In EUR/USD, what is EUR?",
+      "explanation": "The first currency in a pair is the base currency.",
+      "is_active": true,
+      "created_at": "2026-05-29T00:00:00Z",
+      "updated_at": "2026-05-29T00:00:00Z"
+    }
+  },
+  {
+    "model": "learning.lessonquiz",
+    "pk": 4,
+    "fields": {
+      "lesson": 4,
+      "question": "Why is leverage risky?",
+      "explanation": "Leverage can magnify both gains and losses.",
+      "is_active": true,
+      "created_at": "2026-05-29T00:00:00Z",
+      "updated_at": "2026-05-29T00:00:00Z"
+    }
+  },
+  {
+    "model": "learning.lessonquiz",
+    "pk": 5,
+    "fields": {
+      "lesson": 5,
+      "question": "What is the purpose of a budget?",
+      "explanation": "A budget helps plan income and expenses before money is spent.",
+      "is_active": true,
+      "created_at": "2026-05-29T00:00:00Z",
+      "updated_at": "2026-05-29T00:00:00Z"
+    }
+  },
+  {
+    "model": "learning.lessonquiz",
+    "pk": 6,
+    "fields": {
+      "lesson": 6,
+      "question": "What is an emergency fund for?",
+      "explanation": "It covers unexpected costs without disrupting the rest of the plan.",
+      "is_active": true,
+      "created_at": "2026-05-29T00:00:00Z",
+      "updated_at": "2026-05-29T00:00:00Z"
+    }
+  },
+  { "model": "learning.lessonquizoption", "pk": 1, "fields": { "quiz": 1, "text": "It is controlled by one central bank.", "is_correct": false, "order": 1 } },
+  { "model": "learning.lessonquizoption", "pk": 2, "fields": { "quiz": 1, "text": "It is decentralized and has limited supply.", "is_correct": true, "order": 2 } },
+  { "model": "learning.lessonquizoption", "pk": 3, "fields": { "quiz": 1, "text": "It can only be used by banks.", "is_correct": false, "order": 3 } },
+  { "model": "learning.lessonquizoption", "pk": 4, "fields": { "quiz": 1, "text": "It has no public transaction history.", "is_correct": false, "order": 4 } },
+  { "model": "learning.lessonquizoption", "pk": 5, "fields": { "quiz": 2, "text": "Passwords for streaming platforms.", "is_correct": false, "order": 1 } },
+  { "model": "learning.lessonquizoption", "pk": 6, "fields": { "quiz": 2, "text": "Private and public keys.", "is_correct": true, "order": 2 } },
+  { "model": "learning.lessonquizoption", "pk": 7, "fields": { "quiz": 2, "text": "Only fiat bank balances.", "is_correct": false, "order": 3 } },
+  { "model": "learning.lessonquizoption", "pk": 8, "fields": { "quiz": 2, "text": "The blockchain itself.", "is_correct": false, "order": 4 } },
+  { "model": "learning.lessonquizoption", "pk": 9, "fields": { "quiz": 3, "text": "The quote currency.", "is_correct": false, "order": 1 } },
+  { "model": "learning.lessonquizoption", "pk": 10, "fields": { "quiz": 3, "text": "The base currency.", "is_correct": true, "order": 2 } },
+  { "model": "learning.lessonquizoption", "pk": 11, "fields": { "quiz": 3, "text": "The broker fee.", "is_correct": false, "order": 3 } },
+  { "model": "learning.lessonquizoption", "pk": 12, "fields": { "quiz": 3, "text": "The interest rate.", "is_correct": false, "order": 4 } },
+  { "model": "learning.lessonquizoption", "pk": 13, "fields": { "quiz": 4, "text": "It removes all losses.", "is_correct": false, "order": 1 } },
+  { "model": "learning.lessonquizoption", "pk": 14, "fields": { "quiz": 4, "text": "It magnifies gains and losses.", "is_correct": true, "order": 2 } },
+  { "model": "learning.lessonquizoption", "pk": 15, "fields": { "quiz": 4, "text": "It guarantees a fixed return.", "is_correct": false, "order": 3 } },
+  { "model": "learning.lessonquizoption", "pk": 16, "fields": { "quiz": 4, "text": "It only applies to savings accounts.", "is_correct": false, "order": 4 } },
+  { "model": "learning.lessonquizoption", "pk": 17, "fields": { "quiz": 5, "text": "To plan income and expenses.", "is_correct": true, "order": 1 } },
+  { "model": "learning.lessonquizoption", "pk": 18, "fields": { "quiz": 5, "text": "To avoid checking transactions.", "is_correct": false, "order": 2 } },
+  { "model": "learning.lessonquizoption", "pk": 19, "fields": { "quiz": 5, "text": "To increase every expense.", "is_correct": false, "order": 3 } },
+  { "model": "learning.lessonquizoption", "pk": 20, "fields": { "quiz": 5, "text": "To replace income.", "is_correct": false, "order": 4 } },
+  { "model": "learning.lessonquizoption", "pk": 21, "fields": { "quiz": 6, "text": "Unexpected expenses.", "is_correct": true, "order": 1 } },
+  { "model": "learning.lessonquizoption", "pk": 22, "fields": { "quiz": 6, "text": "Guaranteed speculation.", "is_correct": false, "order": 2 } },
+  { "model": "learning.lessonquizoption", "pk": 23, "fields": { "quiz": 6, "text": "Monthly entertainment only.", "is_correct": false, "order": 3 } },
+  { "model": "learning.lessonquizoption", "pk": 24, "fields": { "quiz": 6, "text": "Avoiding all financial planning.", "is_correct": false, "order": 4 } }
+]

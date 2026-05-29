@@ -1,78 +1,81 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingHeader from '../../components/onboarding/OnboardingHeader';
 import FinnChatBubble from '../../components/onboarding/FinnChatBubble';
 import OnboardingOptionCard from '../../components/onboarding/OnboardingOptionCard';
 import OnboardingContinueButton from '../../components/onboarding/OnboardingContinueButton';
-
-const INTERESTS = [
-  {
-    id: 'crypto',
-    icon: 'currency_bitcoin',
-    label: 'Crypto',
-    subLabel: 'Bitcoin, Ethereum & Web3',
-    iconBgClass: 'bg-primary-container/20',
-    iconTextClass: 'text-primary',
-  },
-  {
-    id: 'stocks',
-    icon: 'show_chart',
-    label: 'Stock Market',
-    subLabel: 'Global equities & ETF strategies',
-    iconBgClass: 'bg-primary-container/20',
-    iconTextClass: 'text-primary',
-  },
-  {
-    id: 'forex',
-    icon: 'payments',
-    label: 'Forex',
-    subLabel: 'Major & minor currency pairs',
-    iconBgClass: 'bg-primary-container/20',
-    iconTextClass: 'text-primary',
-  },
-  {
-    id: 'savings',
-    icon: 'savings',
-    label: 'Personal Saving',
-    subLabel: 'Budgeting & high-yield accounts',
-    iconBgClass: 'bg-primary-container/20',
-    iconTextClass: 'text-primary',
-  },
-];
+import { useOnboarding } from '../../context/OnboardingContext';
+import { useI18n } from '../../i18n/I18nContext';
 
 export default function OnboardingStep1() {
   const navigate = useNavigate();
-  const [selected, setSelected] = useState(new Set());
+  const { t } = useI18n();
+  const { answers, updateAnswer } = useOnboarding();
+  const selected = new Set(answers.interests);
+  const interests = [
+    {
+      id: 'crypto',
+      icon: 'currency_bitcoin',
+      label: t('dashboard.crypto'),
+      subLabel: t('onboarding.interestCryptoSub'),
+      iconBgClass: 'bg-primary-container/20',
+      iconTextClass: 'text-primary',
+    },
+    {
+      id: 'stocks',
+      icon: 'show_chart',
+      label: t('onboarding.interestStocks'),
+      subLabel: t('onboarding.interestStocksSub'),
+      iconBgClass: 'bg-primary-container/20',
+      iconTextClass: 'text-primary',
+    },
+    {
+      id: 'forex',
+      icon: 'payments',
+      label: t('dashboard.forex'),
+      subLabel: t('onboarding.interestForexSub'),
+      iconBgClass: 'bg-primary-container/20',
+      iconTextClass: 'text-primary',
+    },
+    {
+      id: 'savings',
+      icon: 'school',
+      label: t('onboarding.interestSavings'),
+      subLabel: t('onboarding.interestSavingsSub'),
+      iconBgClass: 'bg-primary-container/20',
+      iconTextClass: 'text-primary',
+    },
+  ];
 
   const toggle = (id) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
+    updateAnswer('interests', (() => {
+      const next = new Set(answers.interests);
       next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+      return Array.from(next);
+    })());
   };
 
   const handleContinue = () => {
-    navigate('/onboarding/step2');
+    navigate('/onboarding/step3');
   };
 
   return (
     <div className="bg-[#090A0D] text-on-surface min-h-screen flex flex-col" style={{ backgroundImage: 'radial-gradient(at 0% 0%, rgba(99, 241, 134, 0.15) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(255, 186, 60, 0.1) 0px, transparent 50%)' }}>
-      <OnboardingHeader currentStep={1} progressFraction="w-1/4" />
+      <OnboardingHeader currentStep={2} totalSteps={4} progressFraction="w-2/4" />
 
-      <main className="flex-1 flex flex-col w-full max-w-lg mx-auto px-container-padding overflow-y-auto">
-        <div className="flex flex-col gap-stack-lg mt-stack-md flex-grow">
+      <main data-scroll-root className="flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-y-auto px-container-padding mx-auto">
+        <div className="flex flex-grow flex-col gap-4">
           <FinnChatBubble
-            message="Welcome to FinanU! I'm Finn, your personalized wealth navigator. To help me build your custom dashboard, what are your main financial interests?"
+            message={t('onboarding.step1Message')}
             time="10:24 AM"
           />
 
-          <div className="flex flex-col gap-stack-md">
-            <h3 className="font-label-md text-on-surface-variant uppercase tracking-wider ml-1">
-              Select all that apply
+          <div className="flex flex-col gap-3 pt-1">
+            <h3 className="ml-1 text-[12px] font-semibold uppercase leading-4 tracking-wider text-on-surface-variant">
+              {t('onboarding.selectAll')}
             </h3>
-            <div className="grid grid-cols-1 gap-gutter">
-              {INTERESTS.map((item) => (
+            <div className="grid grid-cols-1 gap-2.5">
+              {interests.map((item) => (
                 <OnboardingOptionCard
                   key={item.id}
                   icon={item.icon}

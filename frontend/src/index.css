@@ -4,7 +4,12 @@ body {
   font-family: 'Geist', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  min-height: max(884px, 100dvh);
+  min-height: 100dvh;
+}
+
+html,
+#root {
+  min-height: 100dvh;
 }
 
 .glass-card {

@@ -1,4 +1,5 @@
 import React from 'react';
+import LanguageSwitcher from '../LanguageSwitcher';
 
 export default function TopBar() {
   return (
@@ -11,6 +12,7 @@ export default function TopBar() {
         />
       </div>
       <div className="flex items-center gap-4">
+        <LanguageSwitcher compact />
         <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant/50 transition-colors active:scale-95 duration-200">
           <span className="material-symbols-outlined text-primary">notifications</span>
         </button>

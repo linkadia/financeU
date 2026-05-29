@@ -1,99 +1,314 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import TopBar from '../components/layout/TopBar';
 import BottomNav from '../components/layout/BottomNav';
-import GlassCard from '../components/ui/GlassCard';
-import { userProfile, badges } from '../data/mockProfile';
+import { getUserSettings, updateUserSettings } from '../api/users';
+import { useI18n } from '../i18n/I18nContext';
+import { clearCurrentUser, getCurrentUser, setCurrentUser } from '../utils/session';
+
+const emptyForm = {
+  username: '',
+  email: '',
+  display_name: '',
+  onboarding_interests: [],
+  onboarding_risk_profile: '',
+  onboarding_goal: '',
+  selected_agent: '',
+  current_password: '',
+  new_password: '',
+};
 
 export default function Profile() {
+  const navigate = useNavigate();
+  const { t } = useI18n();
+  const currentUser = useMemo(() => getCurrentUser(), []);
+  const interests = [
+    { id: 'crypto', label: t('profile.crypto') },
+    { id: 'stocks', label: t('profile.stocks') },
+    { id: 'forex', label: t('profile.forex') },
+    { id: 'savings', label: t('profile.investingBasics') },
+  ];
+  const riskProfiles = [
+    { id: 'low', label: t('profile.low') },
+    { id: 'medium', label: t('profile.medium') },
+    { id: 'high', label: t('profile.high') },
+  ];
+  const goals = [
+    { id: 'emergency', label: t('profile.emergencyFund') },
+    { id: 'investing', label: t('profile.cryptoStocks') },
+    { id: 'purchase', label: t('profile.majorPurchase') },
+    { id: 'retirement', label: t('profile.retirement') },
+  ];
+  const agents = [
+    { id: 'finn', label: 'Finn' },
+    { id: 'nova', label: 'Nova' },
+  ];
+  const [form, setForm] = useState(emptyForm);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [status, setStatus] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!currentUser?.id) {
+      navigate('/', { replace: true });
+      return;
+    }
+
+    getUserSettings(currentUser.id)
+      .then((settings) => {
+        setForm({
+          ...emptyForm,
+          ...settings,
+          onboarding_interests: settings.onboarding_interests ?? [],
+        });
+      })
+      .catch((requestError) => setError(requestError.message))
+      .finally(() => setIsLoading(false));
+  }, [currentUser, navigate]);
+
+  const updateField = (field, value) => {
+    setForm((current) => ({ ...current, [field]: value }));
+    setError('');
+    setStatus('');
+  };
+
+  const toggleInterest = (id) => {
+    setForm((current) => {
+      const selected = new Set(current.onboarding_interests);
+      selected.has(id) ? selected.delete(id) : selected.add(id);
+      return { ...current, onboarding_interests: Array.from(selected) };
+    });
+    setError('');
+    setStatus('');
+  };
+
+  const handleSave = async (event) => {
+    event.preventDefault();
+    if (!currentUser?.id) return;
+
+    if (form.new_password && !form.current_password) {
+      setError(t('profile.enterCurrentPassword'));
+      return;
+    }
+
+    setIsSaving(true);
+    setError('');
+    setStatus('');
+
+    try {
+      const updatedUser = await updateUserSettings(currentUser.id, {
+        ...form,
+        display_name: form.username,
+      });
+      setCurrentUser(updatedUser);
+      setForm((current) => ({
+        ...current,
+        ...updatedUser,
+        onboarding_interests: updatedUser.onboarding_interests ?? [],
+        current_password: '',
+        new_password: '',
+      }));
+      setStatus(t('profile.settingsSaved'));
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleLogout = () => {
+    clearCurrentUser();
+    navigate('/', { replace: true });
+  };
+
   return (
-    <div className="bg-background text-on-surface min-h-screen pb-24 relative">
+    <div className="relative min-h-screen bg-background pb-24 text-on-surface">
       <TopBar />
 
-      <main className="pt-20 px-container-padding max-w-md mx-auto space-y-stack-lg">
-        <section className="glass-card rounded-xl p-container-padding relative overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 blur-[60px] rounded-full"></div>
-          <div className="flex justify-between items-end relative z-10">
-            <div>
-              <p className="font-label-sm text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Total Balance</p>
-              <div className="flex items-baseline gap-2">
-                <span className="font-headline-xl text-headline-xl text-primary">1,250</span>
-                <span className="font-title-md text-title-md text-primary">Points</span>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="font-label-sm text-label-sm text-on-surface-variant mb-1">Rank: Silver III</p>
-              <div className="w-24 h-2 bg-surface-container-highest rounded-full overflow-hidden">
-                <div className="bg-[#51e178] h-full w-[65%] shadow-[0_0_8px_rgba(81,225,120,0.5)]"></div>
-              </div>
-            </div>
-          </div>
-        </section>
+      <main className="mx-auto max-w-md space-y-stack-md px-container-padding pt-20">
+        <header className="space-y-1">
+          <h1 className="text-[28px] font-semibold leading-9 text-on-surface">{t('profile.settings')}</h1>
+          <p className="text-[14px] leading-5 text-on-surface-variant">
+            {t('profile.accountDetails')}
+          </p>
+        </header>
 
-        <section className="space-y-stack-md">
-          <div className="flex justify-between items-center">
-            <h2 className="font-title-md text-title-md text-on-surface">Your Achievements & Badges</h2>
-            <button className="text-primary font-label-md text-label-md">View All</button>
-          </div>
-          <div className="grid grid-cols-3 gap-gutter">
-            {badges.map((badge, index) => (
-              <GlassCard key={badge.id} className={`p-base flex flex-col items-center text-center gap-2 ${index === 0 ? 'pulse-border-green' : ''} ${index === 2 ? 'grayscale opacity-50 relative' : ''}`}>
-                {index === 2 && (
-                  <div className="absolute top-1 right-1">
-                    <span className="material-symbols-outlined text-[16px]">lock</span>
-                  </div>
-                )}
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center border ${index === 2 ? 'bg-surface-variant border-outline/20' : `bg-${badge.color}/20 border-${badge.color}/30`}`}>
-                  <span className={`material-symbols-outlined text-[32px] ${index === 2 ? 'text-outline' : `text-${badge.color}`}`} style={index !== 2 ? { fontVariationSettings: "'FILL' 1" } : {}}>{badge.icon}</span>
+        {isLoading ? (
+          <section className="glass-card rounded-lg p-4 text-on-surface-variant">{t('common.loadingSettings')}</section>
+        ) : (
+          <form className="space-y-stack-md" onSubmit={handleSave}>
+            <section className="glass-card rounded-lg p-4">
+              <div className="mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">badge</span>
+                <h2 className="text-[18px] font-semibold leading-6">{t('profile.personalDetails')}</h2>
+              </div>
+
+              <div className="space-y-3">
+                <TextField label={t('profile.username')} value={form.username} onChange={(value) => updateField('username', value)} autoComplete="username" />
+                <TextField label={t('profile.email')} type="email" value={form.email} onChange={(value) => updateField('email', value)} autoComplete="email" />
+              </div>
+            </section>
+
+            <section className="glass-card rounded-lg p-4">
+              <div className="mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-secondary">tune</span>
+                <h2 className="text-[18px] font-semibold leading-6">{t('profile.onboardingPreferences')}</h2>
+              </div>
+
+              <SettingGroup label={t('profile.interests')}>
+                <div className="grid grid-cols-2 gap-2">
+                  {interests.map((item) => (
+                    <ChipButton
+                      key={item.id}
+                      selected={form.onboarding_interests.includes(item.id)}
+                      onClick={() => toggleInterest(item.id)}
+                    >
+                      {item.label}
+                    </ChipButton>
+                  ))}
                 </div>
-                <span className={`font-label-sm text-label-sm leading-tight ${index === 2 ? 'text-outline' : 'text-on-surface'}`}>{badge.title}</span>
-              </GlassCard>
-            ))}
-          </div>
-        </section>
+              </SettingGroup>
 
-        <section className="glass-card rounded-xl p-container-padding space-y-stack-md border-l-4 border-primary">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>quiz</span>
-            <h2 className="font-title-md text-title-md text-on-surface">Today's Trading Playground Quiz</h2>
-          </div>
-          <div className="p-4 bg-surface-container rounded-lg border border-white/5">
-            <p className="font-body-md text-body-md text-on-surface leading-snug">What does a "Bull Market" mean in financial terms?</p>
-          </div>
-          <div className="grid grid-cols-1 gap-base">
-            <button className="w-full text-left p-4 rounded-xl border border-white/10 hover:border-primary/50 hover:bg-primary/5 transition-all group active:scale-[0.98]">
-              <div className="flex justify-between items-center">
-                <span className="font-label-md text-label-md text-on-surface">Prices are rising and optimism is high</span>
-                <span className="material-symbols-outlined text-primary opacity-0 group-hover:opacity-100 transition-opacity">check_circle</span>
-              </div>
-            </button>
-            <button className="w-full text-left p-4 rounded-xl border border-white/10 hover:border-error/50 hover:bg-error/5 transition-all group active:scale-[0.98]">
-              <div className="flex justify-between items-center">
-                <span className="font-label-md text-label-md text-on-surface">Prices are falling and pessimism prevails</span>
-                <span className="material-symbols-outlined text-error opacity-0 group-hover:opacity-100 transition-opacity">cancel</span>
-              </div>
-            </button>
-          </div>
-        </section>
+              <SettingGroup label={t('profile.riskProfile')}>
+                <SegmentedOptions options={riskProfiles} value={form.onboarding_risk_profile} onChange={(value) => updateField('onboarding_risk_profile', value)} />
+              </SettingGroup>
 
-        <section className="grid grid-cols-2 gap-gutter">
-          <GlassCard className="p-container-padding flex flex-col justify-between aspect-square">
-            <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>workspace_premium</span>
-            <div>
-              <p className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">#24</p>
-              <p className="font-label-sm text-label-sm text-on-surface-variant">Global Leaderboard</p>
+              <SettingGroup label={t('profile.primaryGoal')}>
+                <SelectField
+                  value={form.onboarding_goal}
+                  onChange={(value) => updateField('onboarding_goal', value)}
+                  options={goals}
+                  placeholder={t('common.selectOption')}
+                />
+              </SettingGroup>
+
+              <SettingGroup label={t('profile.aiCompanion')}>
+                <SegmentedOptions options={agents} value={form.selected_agent} onChange={(value) => updateField('selected_agent', value)} />
+              </SettingGroup>
+            </section>
+
+            <section className="glass-card rounded-lg p-4">
+              <div className="mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">lock</span>
+                <h2 className="text-[18px] font-semibold leading-6">{t('profile.security')}</h2>
+              </div>
+
+              <div className="space-y-3">
+                <TextField label={t('profile.currentPassword')} type="password" value={form.current_password} onChange={(value) => updateField('current_password', value)} autoComplete="current-password" />
+                <TextField label={t('profile.newPassword')} type="password" value={form.new_password} onChange={(value) => updateField('new_password', value)} autoComplete="new-password" />
+              </div>
+            </section>
+
+            {error && (
+              <div className="rounded-lg border border-error/40 bg-error-container/30 px-4 py-3 text-[14px] font-medium text-on-error-container" role="alert">
+                {error}
+              </div>
+            )}
+
+            {status && (
+              <div className="rounded-lg border border-secondary/30 bg-secondary/10 px-4 py-3 text-[14px] font-medium text-secondary" role="status">
+                {status}
+              </div>
+            )}
+
+            <div className="sticky bottom-20 -mx-container-padding bg-gradient-to-t from-background via-background/95 to-background/0 px-container-padding pb-4 pt-5">
+              <button
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-secondary py-3.5 text-[16px] font-semibold text-on-secondary shadow-lg transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                type="submit"
+                disabled={isSaving}
+              >
+                <span className="material-symbols-outlined text-[20px]">save</span>
+                {isSaving ? t('profile.saving') : t('profile.saveSettings')}
+              </button>
             </div>
-          </GlassCard>
-          <GlassCard className="p-container-padding flex flex-col justify-between aspect-square">
-            <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>auto_graph</span>
-            <div>
-              <p className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">12</p>
-              <p className="font-label-sm text-label-sm text-on-surface-variant">Quizzes Solved</p>
-            </div>
-          </GlassCard>
-        </section>
+
+            <button
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-surface-container-lowest py-3 text-[15px] font-semibold text-on-surface-variant transition-colors hover:bg-surface-container"
+              type="button"
+              onClick={handleLogout}
+            >
+              <span className="material-symbols-outlined text-[20px]">logout</span>
+              {t('profile.signOut')}
+            </button>
+          </form>
+        )}
       </main>
 
       <BottomNav />
     </div>
+  );
+}
+
+function TextField({ label, value, onChange, type = 'text', autoComplete }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[12px] font-semibold uppercase leading-4 tracking-wide text-on-surface-variant">
+        {label}
+      </span>
+      <input
+        className="w-full rounded-lg border border-white/10 bg-surface-container-lowest px-3 py-3 text-[15px] text-on-surface placeholder:text-outline focus:border-secondary focus:ring-secondary"
+        type={type}
+        value={value ?? ''}
+        autoComplete={autoComplete}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
+  );
+}
+
+function SettingGroup({ label, children }) {
+  return (
+    <div className="mb-4 last:mb-0">
+      <p className="mb-2 text-[12px] font-semibold uppercase leading-4 tracking-wide text-on-surface-variant">
+        {label}
+      </p>
+      {children}
+    </div>
+  );
+}
+
+function ChipButton({ selected, onClick, children }) {
+  return (
+    <button
+      className={`rounded-lg border px-3 py-2 text-[13px] font-semibold transition-colors ${
+        selected
+          ? 'border-secondary bg-secondary/15 text-secondary'
+          : 'border-white/10 bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container'
+      }`}
+      type="button"
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SegmentedOptions({ options, value, onChange }) {
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {options.map((option) => (
+        <ChipButton key={option.id} selected={value === option.id} onClick={() => onChange(option.id)}>
+          {option.label}
+        </ChipButton>
+      ))}
+    </div>
+  );
+}
+
+function SelectField({ options, value, onChange, placeholder }) {
+  return (
+    <select
+      className="w-full rounded-lg border border-white/10 bg-surface-container-lowest px-3 py-3 text-[15px] text-on-surface focus:border-secondary focus:ring-secondary"
+      value={value ?? ''}
+      onChange={(event) => onChange(event.target.value)}
+    >
+      <option value="">{placeholder}</option>
+      {options.map((option) => (
+        <option key={option.id} value={option.id}>
+          {option.label}
+        </option>
+      ))}
+    </select>
   );
 }

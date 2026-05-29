@@ -1,0 +1,257 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>FinanU - Step 3</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#ffcbad",
+                    "surface-bright": "#38393c",
+                    "on-background": "#e3e2e6",
+                    "surface-container": "#1f1f23",
+                    "inverse-surface": "#e3e2e6",
+                    "primary-fixed": "#70fe91",
+                    "secondary-fixed-dim": "#ffba3c",
+                    "on-tertiary": "#512300",
+                    "on-primary": "#003915",
+                    "on-tertiary-fixed-variant": "#733500",
+                    "on-primary-fixed": "#002109",
+                    "error-container": "#93000a",
+                    "secondary": "#f2ae2e", // Updated to match request
+                    "on-secondary-fixed-variant": "#604100",
+                    "outline": "#9e8e7a",
+                    "inverse-primary": "#006e2e",
+                    "on-error": "#690005",
+                    "inverse-on-surface": "#303034",
+                    "surface-variant": "#343538",
+                    "surface-dim": "#121316",
+                    "on-tertiary-fixed": "#311300",
+                    "secondary-fixed": "#ffdead",
+                    "secondary-container": "#cb8d00",
+                    "primary-container": "#42d46d",
+                    "outline-variant": "#514534",
+                    "on-secondary-fixed": "#281900",
+                    "error": "#ffb4ab",
+                    "on-primary-container": "#005723",
+                    "tertiary-fixed-dim": "#ffb689",
+                    "on-surface-variant": "#d5c4ae",
+                    "on-surface": "#e3e2e6",
+                    "surface": "#121316",
+                    "primary-fixed-dim": "#51e178",
+                    "primary": "#63f186",
+                    "on-tertiary-container": "#793800",
+                    "surface-tint": "#51e178",
+                    "surface-container-highest": "#343538",
+                    "on-secondary-container": "#432c00",
+                    "background": "#090A0D",
+                    "tertiary-container": "#ffa56a",
+                    "surface-container-lowest": "#0d0e11",
+                    "on-primary-fixed-variant": "#005321",
+                    "surface-container-low": "#1b1b1f",
+                    "on-error-container": "#ffdad6",
+                    "tertiary-fixed": "#ffdbc7",
+                    "surface-container-high": "#292a2d",
+                    "on-secondary": "#281900"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.5rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-padding": "16px",
+                    "stack-md": "16px",
+                    "base": "8px",
+                    "stack-sm": "4px",
+                    "gutter": "12px",
+                    "stack-lg": "24px"
+            },
+            "fontFamily": {
+                    "label-md": ["Geist"],
+                    "body-md": ["Geist"],
+                    "body-lg": ["Geist"],
+                    "headline-lg": ["Geist"],
+                    "title-md": ["Geist"],
+                    "headline-lg-mobile": ["Geist"],
+                    "headline-xl": ["Geist"],
+                    "mono-data": ["Geist"],
+                    "label-sm": ["Geist"]
+            },
+            "fontSize": {
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "mono-data": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Geist', sans-serif;
+            background-color: #090A0D;
+            color: #e3e2e6;
+            -webkit-font-smoothing: antialiased;
+        }
+        .glass-panel {
+            background: rgba(31, 31, 35, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .pulse-border {
+            border: 1px solid #f2ae2e;
+            box-shadow: 0 0 12px rgba(242, 174, 46, 0.2);
+        }
+        .gradient-mesh {
+            background-image: radial-gradient(at 0% 0%, rgba(99, 241, 134, 0.1) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(242, 174, 46, 0.05) 0px, transparent 50%);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface overflow-hidden">
+<!-- Progress Indicator - Top (Step 3 of 4) -->
+<div class="fixed top-0 left-0 w-full h-1 bg-surface-container-highest z-[60]">
+<div class="h-full bg-secondary w-3/4 transition-all duration-700 ease-out" id="progress-bar"></div>
+</div>
+<!-- Header (Matching SCREEN_28) -->
+<header class="sticky top-0 z-50 bg-surface/80 backdrop-blur-xl border-b border-white/10 flex justify-between items-center w-full px-container-padding h-16">
+<div class="flex items-center gap-stack-md">
+<button class="p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined text-on-surface">close</span>
+</button>
+<img alt="Finanu Logo" class="h-6 md:h-8 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEVed2cAWQhnZmCYEo8c7WnwYIxlNA8zO2VYCdovKuhg8KE8xlG8sQc2GXEJnMN9ixwYTJD6kYNpQY5zWsG8phfAnIPEbAVRwXXhi7uF2IfyHaMDGbrS9cbxmQ1uKXP6_JVfyznFvUHS4BGbnL8Lj_2hsO94H0FvU3lASYXdyoEWPjreBt9DIb-X8ccHLAdA3bkAYarOgY9tIlEr69X5ypl3nQV1XMAKsFN-5xraYqqsprwwB8RJ_DjBwylcNmUSw_KIjXOL-fLu0L">
+</div>
+<div class="flex gap-2">
+<span class="font-label-md text-on-surface-variant bg-surface-container px-3 py-1 rounded-full">Step 3 of 4</span>
+</div>
+</header>
+<main class="relative h-[calc(100vh-64px)] w-full max-w-lg mx-auto flex flex-col p-container-padding overflow-y-auto gradient-mesh">
+<!-- Conversation Thread -->
+<div class="flex flex-col gap-stack-lg mt-stack-md flex-grow">
+<!-- Agent Message (Chat Bubble matching SCREEN_28) -->
+<div class="flex flex-col gap-base max-w-[85%] animate-in fade-in slide-in-from-bottom-4 duration-500">
+<div class="glass-panel p-stack-md rounded-xl rounded-tl-none">
+<p class="font-body-md text-on-surface">
+                    Lastly, what's your primary financial goal for the next 12 months?
+                </p>
+</div>
+<span class="font-label-sm text-on-surface-variant ml-1">10:25 AM</span>
+</div>
+<!-- Interaction Section (Selectable Cards matching SCREEN_28) -->
+<div class="flex flex-col gap-stack-md">
+<h3 class="font-label-md text-on-surface-variant uppercase tracking-wider ml-1">SELECT YOUR GOAL</h3>
+<div class="grid grid-cols-1 gap-gutter">
+<!-- Option 1 -->
+<button class="group relative flex items-center justify-between p-stack-md glass-panel rounded-xl hover:bg-surface-container transition-all duration-200 text-left overflow-hidden" onclick="toggleSelect(this)">
+<div class="flex items-center gap-stack-md z-10">
+<div class="w-10 h-10 flex items-center justify-center rounded-lg bg-primary/10 text-primary">
+<span class="material-symbols-outlined">emergency_home</span>
+</div>
+<div>
+<p class="font-title-md text-on-surface">Building an Emergency Fund</p>
+<p class="font-label-sm text-on-surface-variant">Safety net for unexpected life events</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary opacity-0 transition-opacity z-10 selection-icon">check_circle</span>
+</button>
+<!-- Option 2 -->
+<button class="group relative flex items-center justify-between p-stack-md glass-panel rounded-xl hover:bg-surface-container transition-all duration-200 text-left overflow-hidden" onclick="toggleSelect(this)">
+<div class="flex items-center gap-stack-md z-10">
+<div class="w-10 h-10 flex items-center justify-center rounded-lg bg-secondary/10 text-secondary">
+<span class="material-symbols-outlined">trending_up</span>
+</div>
+<div>
+<p class="font-title-md text-on-surface">Investing in Crypto/Stocks</p>
+<p class="font-label-sm text-on-surface-variant">Growing wealth through markets</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary opacity-0 transition-opacity z-10 selection-icon">check_circle</span>
+</button>
+<!-- Option 3 -->
+<button class="group relative flex items-center justify-between p-stack-md glass-panel rounded-xl hover:bg-surface-container transition-all duration-200 text-left overflow-hidden" onclick="toggleSelect(this)">
+<div class="flex items-center gap-stack-md z-10">
+<div class="w-10 h-10 flex items-center justify-center rounded-lg bg-tertiary/10 text-tertiary">
+<span class="material-symbols-outlined">shopping_cart</span>
+</div>
+<div>
+<p class="font-title-md text-on-surface">Saving for a Major Purchase</p>
+<p class="font-label-sm text-on-surface-variant">Home, travel, or education</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary opacity-0 transition-opacity z-10 selection-icon">check_circle</span>
+</button>
+<!-- Option 4 -->
+<button class="group relative flex items-center justify-between p-stack-md glass-panel rounded-xl hover:bg-surface-container transition-all duration-200 text-left overflow-hidden" onclick="toggleSelect(this)">
+<div class="flex items-center gap-stack-md z-10">
+<div class="w-10 h-10 flex items-center justify-center rounded-lg bg-primary-fixed/10 text-primary-fixed">
+<span class="material-symbols-outlined">bedroom_parent</span>
+</div>
+<div>
+<p class="font-title-md text-on-surface">Retirement Planning</p>
+<p class="font-label-sm text-on-surface-variant">Long-term financial security</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary opacity-0 transition-opacity z-10 selection-icon">check_circle</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Footer Action (Button matching SCREEN_28 color #f2ae2e) -->
+<div class="sticky bottom-0 bg-transparent pb-8 pt-4 flex flex-col gap-stack-md">
+<button class="w-full py-4 bg-secondary text-on-secondary font-title-md rounded-xl shadow-lg opacity-50 cursor-not-allowed transition-all active:scale-95 flex items-center justify-center gap-2" disabled="" id="continue-btn">
+            Continue
+            <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+<p class="font-label-sm text-center text-on-surface-variant">Don't worry, you can change these later in settings.</p>
+</div>
+</main>
+<script>
+    let selectedElement = null;
+    const continueBtn = document.getElementById('continue-btn');
+
+    function toggleSelect(el) {
+        // Remove active state from previous
+        if (selectedElement) {
+            selectedElement.classList.remove('pulse-border', 'bg-surface-container');
+            selectedElement.querySelector('.selection-icon').classList.add('opacity-0');
+        }
+
+        // Set new active
+        selectedElement = el;
+        el.classList.add('pulse-border', 'bg-surface-container');
+        el.querySelector('.selection-icon').classList.remove('opacity-0');
+
+        // Enable button
+        continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        continueBtn.disabled = false;
+    }
+
+    // Enter animations
+    document.addEventListener('DOMContentLoaded', () => {
+        const items = document.querySelectorAll('button[onclick="toggleSelect(this)"]');
+        items.forEach((item, index) => {
+            item.style.opacity = '0';
+            item.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                item.style.transition = 'all 0.4s ease-out';
+                item.style.opacity = '1';
+                item.style.transform = 'translateY(0)';
+            }, 100 * (index + 2));
+        });
+    });
+</script>
+</body></html>

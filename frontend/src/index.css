@@ -1,0 +1,47 @@
+/* Custom CSS for Stitch Screens */
+
+body {
+  font-family: 'Geist', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: max(884px, 100dvh);
+}
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-panel {
+  background: rgba(31, 31, 35, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pulse-border-green {
+  border: 1px solid #4be277;
+  box-shadow: 0 0 8px rgba(75, 226, 119, 0.3);
+}
+
+.pulse-border-onboarding {
+  border: 1px solid rgba(255, 186, 60, 0.6);
+  box-shadow: 0 0 12px rgba(255, 186, 60, 0.3);
+}
+
+.glow-path {
+  filter: drop-shadow(0 0 4px #4be277);
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.neon-glow-secondary {
+  box-shadow: 0 0 15px rgba(81, 225, 120, 0.2);
+}

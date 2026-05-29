@@ -1,0 +1,227 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head></head><body class="bg-background text-on-surface min-h-screen pb-24"><svg class="inline-defs-container" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"></svg>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;display=swap" rel="stylesheet">
+<style>
+    body {
+      font-family: 'Geist', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .pulse-border-green {
+      border: 1px solid #4be277;
+      box-shadow: 0 0 8px rgba(75, 226, 119, 0.3);
+    }
+    .glow-path {
+      filter: drop-shadow(0 0 4px #4be277);
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {outline: "#9e8e7a", "surface-container-high": "#292a2d", "tertiary-fixed-dim": "#ffb689", "primary-fixed": "#70fe91", "primary-fixed-dim": "#51e178", error: "#ffb4ab", "inverse-surface": "#e3e2e6", "inverse-on-surface": "#303034", "tertiary-fixed": "#ffdbc7", surface: "#121316", "secondary-fixed-dim": "#ffba3c", "inverse-primary": "#006e2e", "secondary-fixed": "#ffdead", "on-error": "#690005", "on-secondary-fixed-variant": "#604100", "surface-tint": "#51e178", "surface-container-lowest": "#0d0e11", background: "#121316", "tertiary-container": "#ffa56a", "surface-bright": "#38393c", "on-primary": "#003915", "on-secondary-fixed": "#281900", "on-surface": "#e3e2e6", primary: "#63f186", "secondary-container": "#cb8d00", "on-primary-fixed-variant": "#005321", "surface-variant": "#343538", "on-secondary-container": "#432c00", "on-primary-fixed": "#002109", "primary-container": "#42d46d", tertiary: "#ffcbad", "surface-container": "#1f1f23", "on-tertiary": "#512300", secondary: "#ffba3c", "on-error-container": "#ffdad6", "surface-dim": "#121316", "on-secondary": "#432c00", "surface-container-highest": "#343538", "on-surface-variant": "#d5c4ae", "on-tertiary-container": "#793800", "error-container": "#93000a", "surface-container-low": "#1b1b1f", "on-background": "#e3e2e6", "outline-variant": "#514534", "on-tertiary-fixed": "#311300", "on-tertiary-fixed-variant": "#733500", "on-primary-container": "#005723"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {"stack-lg": "24px", "container-padding": "16px", "stack-md": "16px", gutter: "12px", "stack-sm": "4px", base: "8px"}, fontFamily: {"title-md": ["Geist"], "body-lg": ["Geist"], "label-sm": ["Geist"], "body-md": ["Geist"], "headline-lg-mobile": ["Geist"], "headline-xl": ["Geist"], "headline-lg": ["Geist"], "label-md": ["Geist"], "mono-data": ["Geist"], headline: ["Geist"], display: ["Geist"], body: ["Geist"], label: ["Geist"]}, fontSize: {"title-md": ["20px", {lineHeight: "28px", fontWeight: "600"}], "body-lg": ["18px", {lineHeight: "28px", fontWeight: "400"}], "label-sm": ["12px", {lineHeight: "16px", letterSpacing: "0.04em", fontWeight: "500"}], "body-md": ["16px", {lineHeight: "24px", fontWeight: "400"}], "headline-lg-mobile": ["28px", {lineHeight: "36px", fontWeight: "600"}], "headline-xl": ["40px", {lineHeight: "48px", letterSpacing: "-0.02em", fontWeight: "700"}], "headline-lg": ["32px", {lineHeight: "40px", letterSpacing: "-0.01em", fontWeight: "600"}], "label-md": ["14px", {lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "500"}], "mono-data": ["14px", {lineHeight: "20px", letterSpacing: "0.05em", fontWeight: "600"}]}}}};</script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+
+
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl dark:bg-surface/80 border-b border-white/10 shadow-sm flex justify-between items-center px-container-padding h-16">
+<div class="flex items-center gap-3">
+
+<img alt="FinanU" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9wD1cKdaA927sd6AdZWeF2pjlIWA2_3jZyoj1jfq3ODBKnzDNuywPo7NlqmH1F75XHOxrC10fUOy4ihNWc78v9svW2PblWiGZCi3SBioiPhl4WfQsO3V5_k2oPW1Dz2uLitRU8SxhMoyqhszEXsAJSSd22_-G6Xu6D45_u2VRQZHz2fEQLVkyTzjvxvX79ACozIylitC8IY2nNiW-qOIJvv662Gx3V4mnGYSTMjKDV2hbk3aUPSwsRk-9Z77G7s4a9w7F6AZcKykr">
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant/50 transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-secondary">notifications</span>
+</button>
+</header>
+<main class="mt-20 px-container-padding space-y-stack-lg">
+<!-- Category Chips -->
+<section class="flex overflow-x-auto hide-scrollbar gap-gutter py-2 -mx-container-padding px-container-padding">
+<button class="px-5 py-2 rounded-full bg-secondary text-on-secondary font-label-md text-label-md whitespace-nowrap shadow-[0_0_12px_rgba(255,186,60,0.4)]">All</button>
+<button class="px-5 py-2 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap hover:bg-surface-variant/50 transition-colors">Crypto</button>
+<button class="px-5 py-2 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap hover:bg-surface-variant/50 transition-colors">Forex</button>
+<button class="px-5 py-2 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap hover:bg-surface-variant/50 transition-colors">My Microcourses</button>
+</section>
+<!-- Hero Card: Featured of the Week -->
+<section class="relative rounded-xl overflow-hidden glass-card pulse-border-green group">
+<div class="p-stack-md space-y-stack-md">
+<div class="flex justify-between items-start">
+<div class="space-y-1">
+<span class="text-secondary font-label-sm text-label-sm uppercase tracking-widest">Featured of the Week</span>
+<h2 class="font-title-md text-title-md text-on-surface">Market Pulse: Q4 Outlook</h2>
+</div>
+<div class="bg-primary/20 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">trending_up</span>
+</div>
+</div>
+<!-- Technical Chart Graphic -->
+<div class="h-40 w-full relative bg-surface-container-lowest rounded-lg overflow-hidden border border-white/5">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent"></div>
+<svg class="absolute bottom-0 w-full h-24" preserveAspectRatio="none" viewBox="0 0 400 100">
+<path class="glow-path" d="M0,80 Q50,70 80,40 T150,50 T220,20 T300,60 T400,10" fill="none" stroke="#4be277" stroke-width="2.5"></path>
+<path d="M0,80 Q50,70 80,40 T150,50 T220,20 T300,60 T400,10 V100 H0 Z" fill="url(#grad1)" opacity="0.2"></path>
+<defs>
+<linearGradient id="grad1" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" style="stop-color:#4be277;stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:#4be277;stop-opacity:0"></stop>
+</linearGradient>
+</defs>
+</svg>
+<!-- Chart Data Points -->
+<div class="absolute top-4 right-4 flex flex-col items-end">
+<span class="font-mono-data text-mono-data text-primary">+12.4%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Global Agg.</span>
+</div>
+</div>
+<button class="w-full py-3 bg-secondary text-on-secondary rounded-lg font-title-md text-title-md flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-[0_4px_12px_rgba(255,186,60,0.2)]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+          Play Audio Summary
+        </button>
+</div>
+</section>
+<!-- Daily Feed (Vertical Scroll Cards) -->
+<div class="space-y-stack-md">
+<div class="flex items-center justify-between">
+<h3 class="font-title-md text-title-md text-on-surface">Daily Feed</h3>
+<span class="font-label-sm text-label-sm text-secondary">View All</span>
+</div>
+<!-- Card 1: Crypto Alert -->
+<article class="relative h-[420px] rounded-xl overflow-hidden glass-card group">
+<img class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" data-alt="A high-contrast macro shot of a physical Bitcoin glowing in a dark, tech-oriented environment. The lighting features intense neon green and orange highlights, creating a sense of urgency and high-value energy. The background is a blurred digital data screen with scrolling tickers, embodying a sophisticated professional trading atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCfIbzTrIN9YOcxY76T6HZvV5wi0NDCbb9tZ__kf80hr-JnafQGVhl5SxowgPVStRgOrVdh605jz-SVenSooO6VArMDi3XsXGGUJisuDxcmID4Rfesd28w6jbuRYCYv2S8WrZWauZFXBXHrTIznK5foXk7s6KYHNKC2HECcRGTuAxxbgbh1JsRe5SaTO98P3raX8PvommhaJGrQcL9v1CqubW7_SJh0ytdWlboL5xDOigkTOtaNS-xRz-tqv228cqmeBCqGbRthkw59">
+<div class="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent"></div>
+<div class="absolute top-4 left-4 flex gap-2">
+<span class="px-3 py-1 rounded-full bg-tertiary text-on-tertiary font-label-sm text-label-sm font-bold uppercase">Crypto Alert</span>
+<span class="px-3 py-1 rounded-full bg-secondary text-on-secondary font-label-sm text-label-sm font-bold uppercase animate-pulse" style="width: 0%;">New</span>
+</div>
+<div class="absolute bottom-6 left-6 right-6 space-y-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/40">
+<span class="material-symbols-outlined text-primary">arrow_upward</span>
+</div>
+<div>
+<h4 class="font-headline-lg-mobile text-headline-lg-mobile text-white leading-tight">Solana Breakout imminent</h4>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">Technical indicators show a strong bull flag formation at the $145 resistance level.</p>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 2: Forex Alert -->
+<article class="relative h-[420px] rounded-xl overflow-hidden glass-card group">
+<img class="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-105 transition-transform duration-700" data-alt="A sophisticated wide shot of a multi-monitor trading desk in London during the blue hour. The screens display complex Forex candlesticks and currency pair data in shades of electric blue and deep navy. The atmosphere is quiet, high-stakes, and professional, with soft cinematic lighting reflecting off premium hardware and glass surfaces." src="https://lh3.googleusercontent.com/aida-public/AB6AXuByM9s5hTQSBip_Q_CXCzLw176JmcDXdPxnrVfA-T9YW91wAHJ5nzbFpoPP4cIVAsPn2AGnMOmlLmecf4NMX9RYW5cgwqMVhLjt54OBdneazpENj6lP7Yq2Q-_eMAWJJSuH4JdMT0THyzfkmNo2ytbJtc6R0TkkFe49lulWx1QKMhGSo0KTrIKn9Mc4myS0COKQPSkKvYKX2jbCC2ab7_lGpO8lQAHY42yBPuzrLn6vNXSj7ktEXTE_TLGGL5qDMiRu2TUmu2aXn0GS">
+<div class="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent"></div>
+<div class="absolute top-4 left-4">
+<span class="px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-bold uppercase">Forex Alert</span>
+</div>
+<div class="absolute bottom-6 left-6 right-6 space-y-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-error-container/20 flex items-center justify-center border border-error-container/40">
+<span class="material-symbols-outlined text-error">arrow_downward</span>
+</div>
+<div>
+<h4 class="font-headline-lg-mobile text-headline-lg-mobile text-white leading-tight">EUR/USD Softens</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">ECB hints at earlier rate cuts causing momentum shift in major pairs.</p>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 3: Microcourse of the Day -->
+<article class="p-6 rounded-xl glass-card border border-white/10 space-y-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">school</span>
+<span class="text-secondary font-label-sm text-label-sm uppercase font-bold">Microcourse of the Day</span>
+</div>
+<span class="text-on-surface-variant font-label-sm text-label-sm">&lt; 10 min</span>
+</div>
+<h4 class="font-title-md text-title-md text-on-surface">How Bitcoin Works: Proof of Work vs Stake</h4>
+<div class="space-y-2">
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Your Progress</span>
+<span class="text-secondary">0%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-0" style="width: 0%;"></div>
+</div>
+</div>
+<button class="w-full flex items-center justify-between p-4 bg-surface-container-high rounded-lg hover:bg-surface-variant transition-all active:scale-[0.98]">
+<span class="font-body-md text-body-md font-semibold">Resume Learning</span>
+<div class="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</button>
+</article>
+</div>
+</main>
+<!-- Floating Action Button: AI Copilot -->
+
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface/80 backdrop-blur-xl border-t border-white/10 shadow-lg flex justify-around items-center h-20 pb-safe px-4">
+  <!-- Active State: Feed -->
+  <a class="flex flex-col items-center justify-center gap-1 min-w-[64px] h-full transition-all active:scale-95 text-[#f2ae2e]" href="#">
+    <div class="bg-[#f2ae2e]/20 rounded-full px-5 py-1">
+      <span class="material-symbols-outlined block" style="font-variation-settings: 'FILL' 1;">rss_feed</span>
+    </div>
+    <span class="font-label-sm text-label-sm font-medium">Feed</span>
+  </a>
+
+  <!-- Inactive State: Learn -->
+  <a class="flex flex-col items-center justify-center gap-1 min-w-[64px] h-full transition-all active:scale-95 text-on-surface-variant hover:text-on-surface" href="#">
+    <div class="px-5 py-1">
+      <span class="material-symbols-outlined block">school</span>
+    </div>
+    <span class="font-label-sm text-label-sm">Learn</span>
+  </a>
+
+  <!-- Inactive State: Profile -->
+  <a class="flex flex-col items-center justify-center gap-1 min-w-[64px] h-full transition-all active:scale-95 text-on-surface-variant hover:text-on-surface" href="#">
+    <div class="px-5 py-1">
+      <span class="material-symbols-outlined block">person</span>
+    </div>
+    <span class="font-label-sm text-label-sm">Profile</span>
+  </a>
+</nav>
+<script>
+    // Micro-interactions for horizontal scroll
+    const categoryChips = document.querySelectorAll('section button');
+    categoryChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        categoryChips.forEach(c => {
+          c.classList.remove('bg-secondary', 'text-on-secondary', 'shadow-[0_0_12px_rgba(255,186,60,0.4)]');
+          c.classList.add('bg-surface-container-high', 'text-on-surface-variant');
+        });
+        chip.classList.add('bg-secondary', 'text-on-secondary', 'shadow-[0_0_12px_rgba(255,186,60,0.4)]');
+        chip.classList.remove('bg-surface-container-high', 'text-on-surface-variant');
+      });
+    });
+
+    // Simple progress bar animation on scroll observer
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const bar = entry.target.querySelector('.bg-secondary');
+          if (bar) bar.style.width = '0%'; 
+        }
+      });
+    }, { threshold: 0.5 });
+
+    document.querySelectorAll('article').forEach(card => observer.observe(card));
+  </script>
+
+
+
+
+</body></html>

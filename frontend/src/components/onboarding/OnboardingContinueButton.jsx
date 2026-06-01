@@ -13,7 +13,7 @@ export default function OnboardingContinueButton({ disabled, onClick, label = 'C
         disabled={disabled}
         onClick={onClick}
         className={`
-          flex w-full items-center justify-center gap-2 rounded-lg bg-secondary py-3.5 text-[16px] font-semibold text-on-secondary shadow-lg
+          flex w-full items-center justify-center gap-2 rounded-lg bg-[#f2ae2e] py-3.5 text-[16px] font-semibold text-on-primary-container shadow-lg shadow-[rgba(242,174,46,0.16)]
           transition-all active:scale-[0.98] flex items-center justify-center gap-2
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110'}
         `}

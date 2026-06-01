@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import TopBar from '../components/layout/TopBar';
 import BottomNav from '../components/layout/BottomNav';
 import { getUserSettings, updateUserSettings } from '../api/users';
+import { FINN_AVATAR, NOVA_AVATAR } from '../data/agents';
 import { useI18n } from '../i18n/I18nContext';
+import { translateApiError } from '../utils/apiErrors';
 import { clearCurrentUser, getCurrentUser, setCurrentUser } from '../utils/session';
 
 const emptyForm = {
@@ -40,8 +42,8 @@ export default function Profile() {
     { id: 'retirement', label: t('profile.retirement') },
   ];
   const agents = [
-    { id: 'finn', label: 'Finn' },
-    { id: 'nova', label: 'Nova' },
+    { id: 'finn', label: 'Finn', levelKey: 'profile.agentFinnLevel', avatar: FINN_AVATAR },
+    { id: 'nova', label: 'Nova', levelKey: 'profile.agentNovaLevel', avatar: NOVA_AVATAR },
   ];
   const [form, setForm] = useState(emptyForm);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,7 +65,7 @@ export default function Profile() {
           onboarding_interests: settings.onboarding_interests ?? [],
         });
       })
-      .catch((requestError) => setError(requestError.message))
+      .catch((requestError) => setError(translateApiError(requestError, t)))
       .finally(() => setIsLoading(false));
   }, [currentUser, navigate]);
 
@@ -111,7 +113,7 @@ export default function Profile() {
       }));
       setStatus(t('profile.settingsSaved'));
     } catch (requestError) {
-      setError(requestError.message);
+      setError(translateApiError(requestError, t));
     } finally {
       setIsSaving(false);
     }
@@ -214,7 +216,7 @@ export default function Profile() {
 
             <div className="sticky bottom-20 -mx-container-padding bg-gradient-to-t from-background via-background/95 to-background/0 px-container-padding pb-4 pt-5">
               <button
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-secondary py-3.5 text-[16px] font-semibold text-on-secondary shadow-lg transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#f2ae2e] py-3.5 text-[16px] font-semibold text-on-primary-container shadow-lg shadow-[rgba(242,174,46,0.16)] transition-all hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                 type="submit"
                 disabled={isSaving}
               >
@@ -268,7 +270,7 @@ function SettingGroup({ label, children }) {
   );
 }
 
-function ChipButton({ selected, onClick, children }) {
+function ChipButton({ selected, onClick, children, detail, avatar }) {
   return (
     <button
       className={`rounded-lg border px-3 py-2 text-[13px] font-semibold transition-colors ${
@@ -279,16 +281,41 @@ function ChipButton({ selected, onClick, children }) {
       type="button"
       onClick={onClick}
     >
-      {children}
+      <span className={`flex items-center ${avatar ? 'justify-start gap-2 text-left' : 'justify-center'}`}>
+        {avatar && (
+          <img
+            alt=""
+            className="h-8 w-8 shrink-0 rounded-full border border-white/10 object-cover"
+            src={avatar}
+          />
+        )}
+        <span className="min-w-0">
+          <span className="block">{children}</span>
+          {detail && (
+            <span className={`mt-0.5 block truncate text-[11px] font-medium leading-4 ${selected ? 'text-secondary' : 'text-on-surface-variant'}`}>
+              {detail}
+            </span>
+          )}
+        </span>
+      </span>
     </button>
   );
 }
 
 function SegmentedOptions({ options, value, onChange }) {
+  const { t } = useI18n();
+  const columnsClass = options.length === 2 ? 'grid-cols-2' : 'grid-cols-3';
+
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div className={`grid ${columnsClass} gap-2`}>
       {options.map((option) => (
-        <ChipButton key={option.id} selected={value === option.id} onClick={() => onChange(option.id)}>
+        <ChipButton
+          key={option.id}
+          selected={value === option.id}
+          onClick={() => onChange(option.id)}
+          detail={option.levelKey ? t(option.levelKey) : null}
+          avatar={option.avatar}
+        >
           {option.label}
         </ChipButton>
       ))}

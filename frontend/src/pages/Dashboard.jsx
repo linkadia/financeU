@@ -1,118 +1,640 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import TopBar from '../components/layout/TopBar';
 import BottomNav from '../components/layout/BottomNav';
 import GlassCard from '../components/ui/GlassCard';
 import CategoryChips from '../components/ui/CategoryChips';
-import { getDashboardData } from '../data/localizedDashboard';
+import { getNewsArticles } from '../api/content';
+import { getCourses } from '../data/localizedCourses';
 import { useI18n } from '../i18n/I18nContext';
+import { translateApiError } from '../utils/apiErrors';
+import { getCurrentUser } from '../utils/session';
+
+const INTEREST_TO_NEWS_TYPE = {
+  crypto: 'crypto',
+  stocks: 'stock_market',
+  forex: 'forex',
+  savings: 'investing_basics',
+};
+
+const NEWS_TYPE_LABEL_KEYS = {
+  crypto: 'dashboard.crypto',
+  stock_market: 'dashboard.stocks',
+  forex: 'dashboard.forex',
+  investing_basics: 'dashboard.investingBasics',
+};
+
+const NEWS_TYPE_ICON = {
+  crypto: 'currency_bitcoin',
+  stock_market: 'show_chart',
+  forex: 'payments',
+  investing_basics: 'school',
+};
+
+const FALLBACK_IMAGES = [
+  'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1642790106117-e829e14a795f?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1559526324-593bc073d938?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=1200&q=80',
+];
+
+const NEWS_PREVIEW_LIMIT = 20;
+const NEWS_LOAD_MORE_COUNT = 5;
+const LEARNING_PROGRESS_STORAGE_KEY = 'finanu_learning_progress';
+
+function mapUserInterestsToNewsTypes(interests = []) {
+  return interests.map((interest) => INTEREST_TO_NEWS_TYPE[interest]).filter(Boolean);
+}
+
+function getLocalizedNews(article, language) {
+  return article.translations?.[language] ?? null;
+}
+
+function getUserNewsLevel(user) {
+  return user?.selected_agent === 'nova' ? 'advanced' : 'beginner';
+}
+
+function getNewsSummaryForLevel(copy, level) {
+  if (level === 'advanced') {
+    return copy.advanced_summary || copy.short_summary || copy.beginner_summary;
+  }
+
+  return copy.beginner_summary || copy.short_summary || copy.advanced_summary;
+}
+
+function getImportanceTone(score) {
+  if (score >= 75) {
+    return {
+      dot: 'bg-error',
+      ring: 'border-error/50 bg-error/15 text-error',
+      labelKey: 'dashboard.highImportance',
+    };
+  }
+
+  if (score >= 45) {
+    return {
+      dot: 'bg-secondary',
+      ring: 'border-secondary/50 bg-secondary/15 text-secondary',
+      labelKey: 'dashboard.mediumImportance',
+    };
+  }
+
+  return {
+    dot: 'bg-primary',
+    ring: 'border-primary/50 bg-primary/15 text-primary',
+    labelKey: 'dashboard.lowImportance',
+  };
+}
+
+function getFallbackImage(article) {
+  const key = `${article.id ?? article.source_url ?? article.headline ?? ''}`;
+  const hash = Array.from(key).reduce((total, char) => total + char.charCodeAt(0), 0);
+
+  return FALLBACK_IMAGES[hash % FALLBACK_IMAGES.length];
+}
+
+function formatNewsDate(value, language) {
+  if (!value) return '';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+
+  return new Intl.DateTimeFormat(language, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
+function loadLearningProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(LEARNING_PROGRESS_STORAGE_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function getCourseProgress(course, progress) {
+  const activeLessons = course.lessons.filter((lesson) => lesson.is_active);
+  const completed = activeLessons.filter((lesson) => progress[lesson.id]?.status === 'completed').length;
+  const total = activeLessons.length;
+
+  return {
+    completed,
+    total,
+    percentage: total ? Math.round((completed / total) * 100) : 0,
+  };
+}
+
+function getLearningPreview(courses, progress) {
+  const activeCourses = courses.filter((course) => course.is_active);
+  const activeLessons = activeCourses.flatMap((course) =>
+    course.lessons
+      .filter((lesson) => lesson.is_active)
+      .map((lesson) => ({ course, lesson }))
+  );
+
+  const currentLearning =
+    activeLessons.find(({ lesson }) => progress[lesson.id]?.status === 'in_progress') ||
+    activeLessons.find(({ lesson }) => progress[lesson.id]?.status !== 'completed') ||
+    activeLessons[0];
+
+  if (!currentLearning) return null;
+
+  return {
+    ...currentLearning,
+    courseProgress: getCourseProgress(currentLearning.course, progress),
+  };
+}
+
+function NewsCard({ article, language, onOpen, t }) {
+  const copy = getLocalizedNews(article, language);
+  if (!copy) return null;
+
+  const importance = getImportanceTone(article.importance_score);
+  const publishedDate = formatNewsDate(article.published_at, language);
+  const tags = [...(article.tags ?? []), ...(article.mentioned_assets ?? [])]
+    .filter(Boolean)
+    .slice(0, 4);
+
+  return (
+    <article className="overflow-hidden rounded-xl border border-white/10 bg-surface-container-high/80 shadow-sm">
+      <button
+        type="button"
+        className="block w-full text-left"
+        onClick={() => onOpen(article)}
+      >
+        <div className="relative aspect-[16/10] w-full overflow-hidden bg-surface-container-lowest">
+          <img
+            className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+            src={article.image_url || getFallbackImage(article)}
+            alt={article.image_alt || copy.headline}
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
+          <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-surface/90 px-3 py-1 font-label-sm text-label-sm text-on-surface backdrop-blur">
+              <span className="material-symbols-outlined text-[16px]">{NEWS_TYPE_ICON[article.news_type]}</span>
+              {t(NEWS_TYPE_LABEL_KEYS[article.news_type] ?? 'dashboard.market')}
+            </span>
+            <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 font-label-sm text-label-sm backdrop-blur ${importance.ring}`}>
+              <span className={`h-2 w-2 rounded-full ${importance.dot}`}></span>
+              {t(importance.labelKey)}
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-3 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <span className="min-w-0 break-words font-label-sm text-label-sm leading-snug text-on-surface-variant">
+              {article.source_name}{publishedDate ? ` · ${publishedDate}` : ''}
+            </span>
+            <span className="material-symbols-outlined mt-0.5 shrink-0 text-[18px] text-secondary">chevron_right</span>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="font-title-md text-title-md leading-tight text-on-surface">
+              {copy.headline}
+            </h4>
+            <p className="font-body-md text-body-md text-on-surface-variant line-clamp-3">
+              {copy.subtitle || copy.short_summary}
+            </p>
+          </div>
+
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <span
+                  key={`${article.id}-${tag}`}
+                  className="rounded-full bg-surface-container-lowest px-2.5 py-1 font-label-sm text-label-sm text-on-surface-variant"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </button>
+    </article>
+  );
+}
+
+function NewsDetailModal({ article, language, onClose, t, userLevel }) {
+  const copy = article ? getLocalizedNews(article, language) : null;
+  const importance = article ? getImportanceTone(article.importance_score) : null;
+  const tags = article
+    ? [...(article.tags ?? []), ...(article.mentioned_assets ?? [])].filter(Boolean).slice(0, 8)
+    : [];
+
+  useEffect(() => {
+    if (!article) return undefined;
+
+    const scrollY = window.scrollY;
+    const previousBodyStyle = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top: document.body.style.top,
+      width: document.body.style.width,
+    };
+
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousBodyStyle.overflow;
+      document.body.style.position = previousBodyStyle.position;
+      document.body.style.top = previousBodyStyle.top;
+      document.body.style.width = previousBodyStyle.width;
+      window.scrollTo(0, scrollY);
+    };
+  }, [article, onClose]);
+
+  if (!article || !copy) return null;
+
+  const summary = getNewsSummaryForLevel(copy, userLevel);
+  const publishedDate = formatNewsDate(article.published_at, language);
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end justify-center overflow-hidden bg-black/70 px-3 py-4 backdrop-blur-sm sm:items-center">
+      <button
+        type="button"
+        className="absolute inset-0 cursor-default"
+        onClick={onClose}
+        aria-label={t('common.close')}
+      ></button>
+
+      <section
+        className="relative flex h-[88dvh] max-h-[720px] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-white/10 bg-surface-container-high shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="news-detail-title"
+      >
+        <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-surface-container-lowest">
+          <img
+            className="h-full w-full object-cover"
+            src={article.image_url || getFallbackImage(article)}
+            alt={article.image_alt || copy.headline}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+          <button
+            type="button"
+            className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-black/65 text-on-surface backdrop-blur transition-colors hover:bg-black/80"
+            onClick={onClose}
+            aria-label={t('common.close')}
+          >
+            <span className="material-symbols-outlined text-[20px]">close</span>
+          </button>
+          <div className="absolute bottom-4 left-4 right-4 flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-surface/90 px-3 py-1 font-label-sm text-label-sm text-on-surface backdrop-blur">
+              <span className="material-symbols-outlined text-[16px]">{NEWS_TYPE_ICON[article.news_type]}</span>
+              {t(NEWS_TYPE_LABEL_KEYS[article.news_type] ?? 'dashboard.market')}
+            </span>
+            <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 font-label-sm text-label-sm backdrop-blur ${importance.ring}`}>
+              <span className={`h-2 w-2 rounded-full ${importance.dot}`}></span>
+              {t(importance.labelKey)}
+            </span>
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-5">
+          <div className="space-y-3">
+            <div className="font-label-sm text-label-sm text-on-surface-variant">
+              <span className="block break-words leading-snug">
+                {article.source_name}{publishedDate ? ` · ${publishedDate}` : ''}
+              </span>
+            </div>
+
+            <h2 id="news-detail-title" className="font-title-lg text-title-lg leading-tight text-on-surface">
+              {copy.headline}
+            </h2>
+
+            {copy.subtitle && (
+              <p className="font-body-md text-body-md text-on-surface-variant">
+                {copy.subtitle}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <p className="font-label-md text-label-md uppercase text-secondary">
+              {t('dashboard.summary')}
+            </p>
+            <p className="whitespace-pre-line font-body-md text-body-md leading-relaxed text-on-surface">
+              {summary}
+            </p>
+          </div>
+
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <span
+                  key={`modal-${article.id}-${tag}`}
+                  className="rounded-full bg-surface-container-lowest px-2.5 py-1 font-label-sm text-label-sm text-on-surface-variant"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {article.source_url && (
+          <div className="shrink-0 border-t border-white/10 bg-surface-container-high px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4">
+            <a
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#f2ae2e] px-5 py-3 font-label-md text-label-md text-black transition-transform active:scale-[0.98]"
+              href={article.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+              {t('dashboard.readOriginal')}
+            </a>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
 
 export default function Dashboard() {
-  const { t } = useI18n();
+  const { language, t } = useI18n();
+  const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState('all');
-  const categories = [
-    { id: 'all', label: t('dashboard.all') },
-    { id: 'crypto', label: t('dashboard.crypto') },
-    { id: 'forex', label: t('dashboard.forex') },
-    { id: 'microcourses', label: t('dashboard.myMicrocourses') },
-  ];
-  const { featuredArticle, dailyFeed, microcourse } = getDashboardData(t);
+  const [news, setNews] = useState([]);
+  const [isLoadingNews, setIsLoadingNews] = useState(true);
+  const [newsError, setNewsError] = useState('');
+  const [newsSearchQuery, setNewsSearchQuery] = useState('');
+  const [visibleNewsCount, setVisibleNewsCount] = useState(NEWS_PREVIEW_LIMIT);
+  const [learningProgress, setLearningProgress] = useState(loadLearningProgress);
+  const [selectedArticle, setSelectedArticle] = useState(null);
+  const [currentUser] = useState(() => getCurrentUser());
+  const courses = useMemo(() => getCourses(language), [language]);
+  const allowedNewsTypes = useMemo(
+    () => mapUserInterestsToNewsTypes(currentUser?.onboarding_interests),
+    [currentUser?.onboarding_interests]
+  );
+  const categories = useMemo(() => {
+    const available = allowedNewsTypes.length > 0
+      ? allowedNewsTypes
+      : Object.values(INTEREST_TO_NEWS_TYPE);
+
+    return [
+      { id: 'all', label: t('dashboard.all') },
+      ...available.map((newsType) => ({
+        id: newsType,
+        label: t(NEWS_TYPE_LABEL_KEYS[newsType] ?? 'dashboard.market'),
+      })),
+    ];
+  }, [allowedNewsTypes, t]);
+
+  const learningPreview = useMemo(
+    () => getLearningPreview(courses, learningProgress),
+    [courses, learningProgress]
+  );
+  const filteredNews = activeCategory === 'all'
+    ? news
+    : news.filter((article) => article.news_type === activeCategory);
+  const normalizedNewsSearchQuery = newsSearchQuery.trim().toLocaleLowerCase(language);
+  const localizedNews = filteredNews.filter((article) => {
+    const copy = getLocalizedNews(article, language);
+    if (!copy) return false;
+    if (!normalizedNewsSearchQuery) return true;
+
+    const searchableText = [
+      copy.headline,
+      copy.subtitle,
+      copy.short_summary,
+      copy.beginner_summary,
+      copy.advanced_summary,
+      article.source_name,
+      ...(article.tags ?? []),
+      ...(article.mentioned_assets ?? []),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLocaleLowerCase(language);
+
+    return searchableText.includes(normalizedNewsSearchQuery);
+  });
+  const visibleNews = localizedNews.slice(0, visibleNewsCount);
+  const hasMoreNews = localizedNews.length > visibleNewsCount;
+  const userNewsLevel = getUserNewsLevel(currentUser);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadNews() {
+      setIsLoadingNews(true);
+      setNewsError('');
+
+      try {
+        const data = await getNewsArticles({ newsTypes: allowedNewsTypes });
+        if (isMounted) {
+          setNews(Array.isArray(data) ? data : data.results ?? []);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setNewsError(translateApiError(error, t));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingNews(false);
+        }
+      }
+    }
+
+    loadNews();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [allowedNewsTypes, t]);
+
+  useEffect(() => {
+    setVisibleNewsCount(NEWS_PREVIEW_LIMIT);
+  }, [activeCategory, language, newsSearchQuery]);
+
+  useEffect(() => {
+    const refreshLearningProgress = () => setLearningProgress(loadLearningProgress());
+
+    window.addEventListener('focus', refreshLearningProgress);
+    window.addEventListener('storage', refreshLearningProgress);
+
+    return () => {
+      window.removeEventListener('focus', refreshLearningProgress);
+      window.removeEventListener('storage', refreshLearningProgress);
+    };
+  }, []);
+
+  const openLearningPreview = () => {
+    if (!learningPreview) {
+      navigate('/learn');
+      return;
+    }
+
+    navigate(`/learn?course=${learningPreview.course.id}&lesson=${learningPreview.lesson.id}`);
+  };
+
+  const showMoreNews = () => {
+    setVisibleNewsCount((current) => Math.min(current + NEWS_LOAD_MORE_COUNT, localizedNews.length));
+  };
 
   return (
     <div className="bg-background text-on-surface min-h-screen pb-24">
       <TopBar />
 
       <main className="pt-20 px-container-padding space-y-stack-lg max-w-md mx-auto">
-        <CategoryChips
-          categories={categories}
-          activeCategory={activeCategory}
-          onCategoryChange={setActiveCategory}
-        />
-
-        <section className="relative rounded-xl overflow-hidden glass-card pulse-border-green group">
-          <div className="p-stack-md space-y-stack-md">
-            <div className="flex justify-between items-start">
-              <div className="space-y-1">
-                <span className="text-secondary font-label-sm text-label-sm uppercase tracking-widest">{featuredArticle.category}</span>
-                <h2 className="font-title-md text-title-md text-on-surface">{featuredArticle.title}</h2>
+        {learningPreview && (
+          <section className="relative overflow-hidden rounded-xl glass-card pulse-border-green group">
+            <button
+              type="button"
+              className="flex w-full gap-3 p-3 text-left active:scale-[0.99] transition-transform"
+              onClick={openLearningPreview}
+            >
+              <div className="relative h-24 w-28 shrink-0 overflow-hidden rounded-lg bg-surface-container-high">
+                <img
+                  alt=""
+                  className="h-full w-full object-cover opacity-75 transition-transform duration-500 group-hover:scale-105"
+                  src={learningPreview.course.thumbnail_url}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                <div className="absolute bottom-2 left-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/75">
+                  <span className="material-symbols-outlined text-[20px] text-secondary">play_arrow</span>
+                </div>
               </div>
-              <div className="bg-primary/20 p-2 rounded-lg">
-                <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>trending_up</span>
-              </div>
-            </div>
 
-            <div className="h-40 w-full relative bg-surface-container-lowest rounded-lg overflow-hidden border border-white/5">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent"></div>
-              <svg className="absolute bottom-0 w-full h-24" preserveAspectRatio="none" viewBox="0 0 400 100">
-                <path className="glow-path" d="M0,80 Q50,70 80,40 T150,50 T220,20 T300,60 T400,10" fill="none" stroke="#4be277" strokeWidth="2.5"></path>
-              </svg>
-              <div className="absolute top-4 right-4 flex flex-col items-end">
-                <span className="font-mono-data text-mono-data text-primary">{featuredArticle.changeText}</span>
-                <span className="font-label-sm text-label-sm text-on-surface-variant">{featuredArticle.changeLabel}</span>
-              </div>
-            </div>
+              <div className="min-w-0 flex-1 space-y-2">
+                <div>
+                  <p className="mb-1 font-label-sm text-label-sm uppercase text-secondary">
+                    {t('dashboard.continueLearning')}
+                  </p>
+                  <h2 className="truncate font-title-md text-title-md leading-tight text-on-surface">
+                    {learningPreview.lesson.title}
+                  </h2>
+                  <p className="mt-1 truncate font-label-sm text-label-sm text-on-surface-variant">
+                    {learningPreview.course.title}
+                  </p>
+                </div>
 
-            <button className="w-full py-3 bg-secondary text-on-secondary rounded-lg font-title-md text-title-md flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-[0_4px_12px_rgba(255,186,60,0.2)]">
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>play_circle</span>
-              {t('dashboard.playAudioSummary')}
+                <div>
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">
+                      {learningPreview.courseProgress.completed}/{learningPreview.courseProgress.total} {t('learn.lessonsCompleted')}
+                    </span>
+                    <span className="font-mono-data text-label-sm text-secondary">
+                      {learningPreview.courseProgress.percentage}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
+                    <div
+                      className="h-full rounded-full bg-secondary"
+                      style={{ width: `${learningPreview.courseProgress.percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
             </button>
-          </div>
-        </section>
+          </section>
+        )}
 
         <div className="space-y-stack-md">
           <div className="flex items-center justify-between">
             <h3 className="font-title-md text-title-md text-on-surface">{t('dashboard.dailyFeed')}</h3>
-            <span className="font-label-sm text-label-sm text-secondary">{t('dashboard.viewAll')}</span>
           </div>
 
-          {dailyFeed.map((item) => (
-            <article key={item.id} className="relative h-[420px] rounded-xl overflow-hidden glass-card group">
-              <img className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" src={item.image} alt={item.title} />
-              <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent"></div>
-              <div className="absolute top-4 left-4 flex gap-2">
-                <span className={`px-3 py-1 rounded-full text-on-tertiary font-label-sm text-label-sm font-bold uppercase ${item.type === 'Crypto Alert' ? 'bg-tertiary text-on-tertiary' : 'bg-secondary-container text-on-secondary-container'}`}>{item.type}</span>
-                {item.isNew && <span className="px-3 py-1 rounded-full bg-secondary text-on-secondary font-label-sm text-label-sm font-bold uppercase animate-pulse">{t('dashboard.new')}</span>}
-              </div>
-              <div className="absolute bottom-6 left-6 right-6 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border ${item.iconBgClass} ${item.iconBorderClass}`}>
-                    <span className={`material-symbols-outlined ${item.iconColorClass}`}>{item.icon}</span>
-                  </div>
-                  <div>
-                    <h4 className="font-headline-lg-mobile text-headline-lg-mobile text-white leading-tight">{item.title}</h4>
-                    <p className="font-body-md text-body-md text-on-surface-variant line-clamp-2">{item.description}</p>
-                  </div>
-                </div>
-              </div>
-            </article>
+          <div className="sticky top-16 z-20 -mx-container-padding space-y-2 bg-background/90 px-container-padding py-2 backdrop-blur-xl">
+            <label className="relative block">
+              <span className="sr-only">{t('dashboard.searchNews')}</span>
+              <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[19px] text-on-surface-variant">
+                search
+              </span>
+              <input
+                className="w-full rounded-full border border-white/10 bg-surface-container-lowest py-2.5 pl-10 pr-10 font-body-md text-body-md text-on-surface outline-none placeholder:text-on-surface-variant focus:border-[#f2ae2e]/70 focus:ring-2 focus:ring-[#f2ae2e]/20"
+                type="search"
+                value={newsSearchQuery}
+                onChange={(event) => setNewsSearchQuery(event.target.value)}
+                placeholder={t('dashboard.searchNewsPlaceholder')}
+              />
+              {newsSearchQuery && (
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container"
+                  onClick={() => setNewsSearchQuery('')}
+                  aria-label={t('common.close')}
+                >
+                  <span className="material-symbols-outlined text-[18px]">close</span>
+                </button>
+              )}
+            </label>
+
+            <CategoryChips
+              categories={categories}
+              activeCategory={activeCategory}
+              onCategoryChange={setActiveCategory}
+              className="py-0"
+            />
+          </div>
+
+          {isLoadingNews && (
+            <GlassCard className="p-6 text-center font-body-md text-body-md text-on-surface-variant">
+              {t('dashboard.loadingNews')}
+            </GlassCard>
+          )}
+
+          {!isLoadingNews && newsError && (
+            <GlassCard className="p-6 text-center font-body-md text-body-md text-error">
+              {newsError}
+            </GlassCard>
+          )}
+
+          {!isLoadingNews && !newsError && localizedNews.length === 0 && (
+            <GlassCard className="p-6 text-center font-body-md text-body-md text-on-surface-variant">
+              {newsSearchQuery.trim() ? t('dashboard.noNewsSearch') : t('dashboard.noNews')}
+            </GlassCard>
+          )}
+
+          {!isLoadingNews && !newsError && visibleNews.map((article) => (
+            <NewsCard
+              key={article.id}
+              article={article}
+              language={language}
+              onOpen={setSelectedArticle}
+              t={t}
+            />
           ))}
 
-          <GlassCard className="p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-secondary">school</span>
-                <span className="text-secondary font-label-sm text-label-sm uppercase font-bold">{t('dashboard.microcourseOfDay')}</span>
-              </div>
-              <span className="text-on-surface-variant font-label-sm text-label-sm">{microcourse.duration}</span>
-            </div>
-            <h4 className="font-title-md text-title-md text-on-surface">{microcourse.title}</h4>
-            <div className="space-y-2">
-              <div className="flex justify-between font-label-sm text-label-sm">
-                <span className="text-on-surface-variant">{t('dashboard.yourProgress')}</span>
-                <span className="text-secondary">{microcourse.progress}%</span>
-              </div>
-              <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
-                <div className="h-full bg-secondary transition-all" style={{ width: `${microcourse.progress}%` }}></div>
-              </div>
-            </div>
-            <button className="w-full flex items-center justify-between p-4 bg-surface-container-high rounded-lg hover:bg-surface-variant transition-all active:scale-[0.98]">
-              <span className="font-body-md text-body-md font-semibold">{t('dashboard.resumeLearning')}</span>
-              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                <span className="material-symbols-outlined text-on-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
-              </div>
+          {!isLoadingNews && !newsError && hasMoreNews && (
+            <button
+              type="button"
+              className="mx-auto flex items-center justify-center gap-2 rounded-full border border-[#f2ae2e]/50 bg-[#f2ae2e]/10 px-5 py-3 font-label-md text-label-md text-[#f2ae2e] shadow-[0_0_14px_rgba(242,174,46,0.12)] transition-all hover:border-[#f2ae2e] hover:bg-[#f2ae2e]/15 active:scale-[0.98]"
+              onClick={showMoreNews}
+            >
+              <span className="material-symbols-outlined text-[18px]">expand_more</span>
+              {t('dashboard.viewMore')}
             </button>
-          </GlassCard>
+          )}
         </div>
       </main>
+      <NewsDetailModal
+        article={selectedArticle}
+        language={language}
+        onClose={() => setSelectedArticle(null)}
+        t={t}
+        userLevel={userNewsLevel}
+      />
       <BottomNav />
     </div>
   );

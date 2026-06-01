@@ -1,7 +1,9 @@
 import uuid
 from calendar import monthrange
 
+# pyrefly: ignore [missing-import]
 from django.db import models
+# pyrefly: ignore [missing-import]
 from django.utils import timezone
 
 

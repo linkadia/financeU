@@ -21,4 +21,4 @@ RUN python manage.py collectstatic --noinput
 
 EXPOSE 8001
 
-CMD ["gunicorn", "finan3_backend.wsgi:application", "--bind", "0.0.0.0:8001", "--workers", "3"]
+CMD ["gunicorn", "finanu_backend.wsgi:application", "--bind", "0.0.0.0:8001", "--workers", "3"]

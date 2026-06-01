@@ -1,4 +1,4 @@
-# Finan3 Frontend
+# Finanu Frontend
 
 React + Vite + MUI mobile-first frontend.
 

@@ -55,7 +55,7 @@ MIDDLEWARE = [
 if WHITENOISE_AVAILABLE:
     MIDDLEWARE.insert(2, "whitenoise.middleware.WhiteNoiseMiddleware")
 
-ROOT_URLCONF = "finan3_backend.urls"
+ROOT_URLCONF = "finanu_backend.urls"
 
 TEMPLATES = [
     {
@@ -72,7 +72,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "finan3_backend.wsgi.application"
+WSGI_APPLICATION = "finanu_backend.wsgi.application"
 
 DB_ENGINE = getenv("DB_ENGINE", "sqlite").lower()
 
@@ -171,5 +171,5 @@ REST_FRAMEWORK = {
     },
     # Trust exactly one proxy/load balancer hop when resolving X-Forwarded-For.
     "NUM_PROXIES": int(getenv("DRF_NUM_PROXIES", "1")),
-    "EXCEPTION_HANDLER": "finan3_backend.exceptions.custom_exception_handler",
+    "EXCEPTION_HANDLER": "finanu_backend.exceptions.custom_exception_handler",
 }

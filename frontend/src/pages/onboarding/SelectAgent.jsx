@@ -2,13 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingHeader from '../../components/onboarding/OnboardingHeader';
 import { useOnboarding } from '../../context/OnboardingContext';
+import { FINN_AVATAR, NOVA_AVATAR } from '../../data/agents';
 import { useI18n } from '../../i18n/I18nContext';
-
-const FINN_AVATAR =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuA0gvVl-pk_RvaxYyQny8IQCgmnz71W9mT9ZmbtbCSL5iJyL1TNtB9qc4_23KD8td59zo10Hvs5UFoBiUb1Dbp8SMZUWiVx01nGitBFx3DuFgm_679OMbvwv1iUECKmnBGnW7FwTS4S2op8VaCRYjzsLRX9GybhQFFGyRIQ0wUhpTfDOMzOqDsyJQ3p5WtveAXeJM1idE3VjuRPCNIs0RWRpTKqZ1vrTkKgLdf6f_beVpmXWVRflTkqhmcGgbwAWzqGwZ0e59CqgIlb';
-
-const NOVA_AVATAR =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuDVGSnNA6PQ4euhijViaZy9HWmWY3FGXMVikDef5PvQ10xD1YLOGkJxSPLPT3eyyMgQOSPqyRKCm_GXBOYQZsOMU9UyGjnnK753D_TKi9xxYHu3t4wsf3sMA4GtY76zmnq_gm_ceVfQVn0UJAEOY5XZVQ0BiUye83QZSiz5lUMLLJMC5HbIeuRAthqCNIshOQ7Ns_25MTx45N3ELVWQ7ptQcxsN7YWWLT-XoYkxgw7_HobQD9uK1I8Tuyjlg78_DiEwHvov6e9OUxDE';
 
 export default function SelectAgent() {
   const navigate = useNavigate();

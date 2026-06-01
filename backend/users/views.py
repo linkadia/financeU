@@ -102,7 +102,10 @@ class LoginView(APIView):
 
         if not identifier or not password:
             return Response(
-                {"detail": "Username or email and password are required."},
+                {
+                    "detail": "Username or email and password are required.",
+                    "error": "missing_login_fields",
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -113,17 +116,17 @@ class LoginView(APIView):
 
         if not profile or not check_password(password, profile.password_hash):
             return Response(
-                {"detail": "Invalid username or password."},
+                {
+                    "detail": "Invalid username or password.",
+                    "error": "invalid_credentials",
+                },
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
         if not profile.can_access_platform():
             return Response(
                 {
-                    "detail": (
-                        "Tu suscripcion esta inactiva. Para acceder de nuevo, "
-                        "renueva la suscripcion mensual."
-                    ),
+                    "detail": "Subscription is inactive.",
                     "error": "subscription_inactive",
                 },
                 status=status.HTTP_403_FORBIDDEN,

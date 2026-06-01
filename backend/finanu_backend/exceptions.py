@@ -12,11 +12,8 @@ def custom_exception_handler(exc, context):
         seconds_remaining = math.ceil(exc.wait or 0)
         response.status_code = status.HTTP_429_TOO_MANY_REQUESTS
         response.data = {
-            "error": "custom_throttled",
-            "message": (
-                "Has realizado demasiados intentos. Por seguridad, "
-                f"intentalo de nuevo en {seconds_remaining} segundos."
-            ),
+            "error": "throttled",
+            "message": "Request was throttled.",
             "seconds_remaining": seconds_remaining,
         }
 

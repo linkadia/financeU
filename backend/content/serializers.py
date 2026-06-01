@@ -1,9 +1,15 @@
 from rest_framework import serializers
-from .models import Article, Course, Lesson
+from .models import Article, Course, Lesson, NewsArticle
 
 class ArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
+        fields = "__all__"
+
+
+class NewsArticleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NewsArticle
         fields = "__all__"
 
 

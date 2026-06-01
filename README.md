@@ -91,7 +91,7 @@ Al finalizar, el frontend llama al backend para marcar el onboarding como comple
 ```text
 finanU/
   backend/
-    finan3_backend/      Configuración Django y urls raíz
+    finanu_backend/      Configuración Django y urls raíz
     users/               Perfiles, login, onboarding y settings
     content/             Artículos, cursos simples y lecciones simples
     markets/             Activos y señales
@@ -121,7 +121,7 @@ finanU/
 - Persistencia local:
   - `finanu.language`: idioma seleccionado.
   - sesión de usuario en utilidades de `frontend/src/utils/session.js`.
-  - `finan3_learning_progress`: progreso de aprendizaje.
+  - `finanu_learning_progress`: progreso de aprendizaje.
 
 ### Backend
 
@@ -426,7 +426,7 @@ GET/POST/PATCH/DELETE /api/subscriptions/
 
 ### Learning
 
-El módulo `learning` contiene modelos completos para catálogo, lecciones, quizzes y progreso. Actualmente no está enlazado en `finan3_backend/urls.py`, por lo que no expone endpoints REST públicos todavía.
+El módulo `learning` contiene modelos completos para catálogo, lecciones, quizzes y progreso. Actualmente no está enlazado en `finanu_backend/urls.py`, por lo que no expone endpoints REST públicos todavía.
 
 Modelos principales:
 

@@ -47,6 +47,7 @@ class NewsArticle(models.Model):
     short_summary = models.TextField()
     advanced_summary = models.TextField()
     beginner_summary = models.TextField()
+    translations = models.JSONField(default=dict, blank=True)
     difficulty = models.CharField(
         max_length=20,
         choices=Difficulty.choices,

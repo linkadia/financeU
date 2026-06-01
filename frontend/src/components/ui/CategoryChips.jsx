@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 
-export default function CategoryChips({ categories, activeCategory, onCategoryChange }) {
+export default function CategoryChips({ categories, activeCategory, onCategoryChange, className = '' }) {
   return (
-    <section className="flex overflow-x-auto hide-scrollbar gap-gutter py-2 -mx-container-padding px-container-padding">
+    <section className={`flex overflow-x-auto hide-scrollbar gap-gutter py-2 -mx-container-padding px-container-padding ${className}`}>
       {categories.map((cat) => {
         const id = typeof cat === 'string' ? cat : cat.id;
         const label = typeof cat === 'string' ? cat : cat.label;

@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "users",
     "content",
     "markets",
+    "marketdata",
     "subscriptions",
     "learning",
 ]

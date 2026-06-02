@@ -6,10 +6,11 @@ import re
 import sys
 import warnings
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, date
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 import time  
+from typing import Literal
 
 import django
 from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
@@ -17,6 +18,7 @@ from django.utils import timezone
 from requests import get
 from rss_parser import RSSParser
 from urllib.parse import urlparse, urlunparse
+from pydantic import BaseModel, Field
 
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
@@ -30,6 +32,7 @@ from content.models import NewsArticle  # noqa: E402
 
 
 DEFAULT_XML_PATH = Path(__file__).with_name("rss_output.xml")
+DEFAULT_MIN_PUBLISHED_AT = date.today().replace(day=1).strftime("%Y-%m-%d")
 RSS_URLS = [
     "https://www.coindesk.com/arc/outboundfeeds/rss",
     "https://cointelegraph.com/rss",
@@ -56,6 +59,31 @@ TEXT_LIMITS = {
 }
 ALLOWED_DIFFICULTIES = set(NewsArticle.Difficulty.values)
 ALLOWED_NEWS_TYPES = set(NewsArticle.NewsType.values)
+GEMINI_FLASH_LITE_INPUT_USD_PER_1M = 0.25
+GEMINI_FLASH_LITE_OUTPUT_USD_PER_1M = 1.5
+
+
+class TranslationOutput(BaseModel):
+    headline: str = Field(description="Frontend-ready headline.")
+    subtitle: str = Field(description="Brief subtitle.")
+    short_summary: str = Field(description="Short summary.")
+    beginner_summary: str = Field(description="Simple beginner explanation.")
+    advanced_summary: str = Field(description="More technical explanation.")
+
+
+class NewsTranslationsOutput(BaseModel):
+    en: TranslationOutput
+    pl: TranslationOutput
+
+
+class NewsLLMOutput(BaseModel):
+    translations: NewsTranslationsOutput
+    difficulty: Literal["beginner", "intermediate", "advanced"]
+    news_type: Literal["crypto", "stock_market", "forex", "investing_basics"]
+    importance_score: int = Field(ge=0, le=100)
+    original_language: Literal["en", "pl", "unknown"]
+    tags: list[str]
+    mentioned_assets: list[str]
 
 LLM_PROMPT = """
 You are a financial editor for an educational app called FinanU.
@@ -226,6 +254,14 @@ def parse_date(value):
     return parsed
 
 
+def parse_min_published_at(value):
+    date_value = datetime.fromisoformat(value).date()
+    return timezone.make_aware(
+        datetime.combine(date_value, datetime.min.time()),
+        timezone.get_current_timezone(),
+    )
+
+
 def first_image_url(item):
     enclosure = item.find("enclosure")
     if enclosure is not None and enclosure.attrib.get("type", "").startswith("image/"):
@@ -360,26 +396,22 @@ def heuristic_classification(headline, content, source_name, source_url):
 
 
 def build_llm():
-    provider = os.getenv("NEWS_LLM_PROVIDER", "").lower()
     model = os.getenv("NEWS_LLM_MODEL", "")
 
-    if provider == "openai":
-        from langchain_openai import ChatOpenAI
+    from langchain_google_genai import ChatGoogleGenerativeAI
 
-        return ChatOpenAI(model=model or "gpt-4o-mini", temperature=0)
-
-    if provider == "gemini":
-        from langchain_google_genai import ChatGoogleGenerativeAI
-
-        return ChatGoogleGenerativeAI(model=model or "gemini-2.5-flash-lite", temperature=0, model_kwargs={"response_format": {"type": "json_object"}})
-
-    return None
+    llm = ChatGoogleGenerativeAI(model=model or "gemini-3.1-flash-lite", temperature=0)
+    return llm.with_structured_output(
+        NewsLLMOutput,
+        method="json_schema",
+        include_raw=True,
+    )
 
 
 def llm_classification(llm, data):
     prompt = LLM_PROMPT.format(**data)
     response = llm.invoke(prompt)
-    # 📊 EXTRACTOR DE TOKENS (Soporta OpenAI y Gemini dinámicamente)
+    #  EXTRACTOR DE TOKENS (Soporta OpenAI y Gemini dinámicamente)
     input_tokens = 0
     output_tokens = 0
     
@@ -404,7 +436,7 @@ def llm_classification(llm, data):
             output_tokens = gemini_usage.get("candidates_token_count", 0)
             
     print(
-        f"📊 [Tokens] '{data['headline'][:35]}...' -> "
+        f"[Tokens] '{data['headline'][:35]}...' -> "
         f"Entrada: {input_tokens} | Salida: {output_tokens} | Total: {input_tokens + output_tokens}"
     )
     content = getattr(response, "content", response)
@@ -434,54 +466,183 @@ def llm_classification(llm, data):
     return parsed
 
 
-def import_items(xml_path, use_llm=False, limit=None):
+def llm_classification(llm, data):
+    prompt = LLM_PROMPT.format(**data)
+    response = llm.invoke(prompt)
+    raw_response = response.get("raw") if isinstance(response, dict) else response
+    parsed_response = response.get("parsed") if isinstance(response, dict) else None
+    parsing_error = response.get("parsing_error") if isinstance(response, dict) else None
+
+    if parsing_error:
+        raise parsing_error
+
+    input_tokens = 0
+    output_tokens = 0
+
+    usage = getattr(raw_response, "usage_metadata", None)
+    if usage:
+        input_tokens = usage.get("input_tokens", 0)
+        output_tokens = usage.get("output_tokens", 0)
+    else:
+        meta = getattr(raw_response, "response_metadata", {})
+        token_usage = meta.get("token_usage", {})
+        input_tokens = token_usage.get("prompt_tokens", 0)
+        output_tokens = token_usage.get("completion_tokens", 0)
+
+        if not input_tokens and not output_tokens:
+            gemini_usage = meta.get("usage_metadata", {})
+            input_tokens = gemini_usage.get("prompt_token_count", 0)
+            output_tokens = gemini_usage.get("candidates_token_count", 0)
+
+    print(
+        f"[TOKENS] '{data['headline'][:35]}...' -> "
+        f"input={input_tokens} output={output_tokens} total={input_tokens + output_tokens}"
+    )
+
+    if parsed_response is not None:
+        parsed = parsed_response.model_dump()
+    else:
+        content = getattr(raw_response, "content", raw_response)
+
+        if isinstance(content, list):
+            content = "".join(part.get("text", "") if isinstance(part, dict) else str(part) for part in content)
+
+        content = str(content).strip()
+        content = re.sub(r"^```(?:json)?|```$", "", content, flags=re.IGNORECASE | re.MULTILINE).strip()
+        parsed = json.loads(content)
+
+    parsed["translations"] = normalize_translations(
+        parsed.get("translations"),
+        data["headline"],
+        data["content"],
+    )
+    if parsed.get("difficulty") not in ALLOWED_DIFFICULTIES:
+        parsed["difficulty"] = NewsArticle.Difficulty.INTERMEDIATE
+
+    if parsed.get("news_type") not in ALLOWED_NEWS_TYPES:
+        parsed["news_type"] = NewsArticle.NewsType.STOCK_MARKET
+
+    parsed["importance_score"] = max(0, min(100, int(parsed.get("importance_score", 50))))
+    parsed["tags"] = clean_list(parsed.get("tags"), limit=8)
+    parsed["mentioned_assets"] = clean_list(parsed.get("mentioned_assets"), limit=10)
+    parsed["original_language"] = clamp_text(parsed.get("original_language", "unknown"), 10)
+    parsed["_token_usage"] = {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": input_tokens + output_tokens,
+    }
+    return parsed
+
+
+def build_candidate_from_item(item, min_published_at, seen_hashes):
+    headline = child_text(item, "title")
+    raw_source_url = child_text(item, "link")
+    source_url = clean_url(raw_source_url)[:500]
+    description = child_text(item, "description")
+    raw_guid = child_text(item, "guid")
+    external_id = (clean_url(raw_guid) if raw_guid else source_url)[:255]
+    source_name, rss_source_url = item_source(item)
+    source_name = source_name or rss_source_url or "Unknown source"
+    published_at = parse_date(child_text(item, "pubDate"))
+
+    if not headline:
+        return None, "invalid"
+
+    if min_published_at and published_at < min_published_at:
+        return None, "old"
+
+    hash_basis = external_id or source_url or f"{source_name}|{headline}|{published_at.isoformat()}"
+    article_hash = hashlib.sha256(hash_basis.encode("utf-8")).hexdigest()
+
+    if article_hash in seen_hashes:
+        return None, "duplicate_in_xml"
+
+    seen_hashes.add(article_hash)
+
+    duplicate_query = Q(content_hash=article_hash)
+    if external_id:
+        duplicate_query |= Q(external_id=external_id)
+    if source_url:
+        duplicate_query |= Q(source_url=source_url)
+
+    if NewsArticle.objects.filter(duplicate_query).exists():
+        return None, "existing"
+
+    return {
+        "article_hash": article_hash,
+        "description": description,
+        "external_id": external_id,
+        "headline": headline,
+        "item": item,
+        "published_at": published_at,
+        "rss_source_url": rss_source_url,
+        "source_name": source_name,
+        "source_url": source_url,
+    }, "candidate"
+
+
+def import_items(xml_path, use_llm=False, limit=None, min_published_at=None):
     tree = ET.parse(xml_path)
     items = tree.getroot().find("channel").findall("item")
     llm = build_llm() if use_llm else None
+    if use_llm and llm is None:
+        raise RuntimeError("Gemini LLM could not be initialized when using --llm.")
+    if use_llm and llm is None:
+        raise RuntimeError("NEWS_LLM_PROVIDER must be 'openai' or 'gemini' when using --llm.")
 
     created = 0
     existing = 0
     skipped = 0
+    old_items = 0
     duplicate_in_xml = 0
     llm_candidates = 0
+    llm_succeeded_count = 0
+    llm_fallback_count = 0
+    total_input_tokens = 0
+    total_output_tokens = 0
     seen_hashes = set()
+    candidates = []
 
     for item in items[:limit]:
-        headline = child_text(item, "title")
-        raw_source_url = child_text(item, "link")
-        source_url = clean_url(raw_source_url)
+        candidate, status = build_candidate_from_item(item, min_published_at, seen_hashes)
 
-        description = child_text(item, "description")
-        
-        raw_guid = child_text(item, "guid")
-        external_id = clean_url(raw_guid) if raw_guid else source_url
-
-        source_name, rss_source_url = item_source(item)
-        source_name = source_name or rss_source_url or "Unknown source"
-        published_at = parse_date(child_text(item, "pubDate"))
-
-        if not headline:
+        if status == "invalid":
             skipped += 1
             continue
-
-        hash_basis = external_id or source_url or f"{source_name}|{headline}|{published_at.isoformat()}"
-        article_hash = hashlib.sha256(hash_basis.encode("utf-8")).hexdigest()
-
-        if article_hash in seen_hashes:
+        if status == "old":
+            old_items += 1
+            continue
+        if status == "duplicate_in_xml":
             duplicate_in_xml += 1
             continue
-
-        seen_hashes.add(article_hash)
-
-        duplicate_query = Q(content_hash=article_hash)
-        if external_id:
-            duplicate_query |= Q(external_id=external_id)
-        if source_url:
-            duplicate_query |= Q(source_url=source_url)
-
-        if NewsArticle.objects.filter(duplicate_query).exists():
+        if status == "existing":
             existing += 1
             continue
+
+        candidates.append(candidate)
+
+    scanned_items = len(items[:limit]) if limit else len(items)
+    print(
+        "Pre-LLM filtering summary. "
+        f"RSS items scanned: {scanned_items}. "
+        f"Existing skipped: {existing}. Old items skipped: {old_items}. "
+        f"XML duplicates skipped: {duplicate_in_xml}. Invalid skipped: {skipped}. "
+        f"New items to analyze/save: {len(candidates)}."
+    )
+
+    if use_llm and candidates:
+        print(f"Starting Gemini analysis for {len(candidates)} new items.")
+
+    for candidate in candidates:
+        article_hash = candidate["article_hash"]
+        description = candidate["description"]
+        external_id = candidate["external_id"]
+        headline = candidate["headline"]
+        item = candidate["item"]
+        published_at = candidate["published_at"]
+        rss_source_url = candidate["rss_source_url"]
+        source_name = candidate["source_name"]
+        source_url = candidate["source_url"]
 
         base_data = {
             "source_name": source_name,
@@ -499,9 +660,14 @@ def import_items(xml_path, use_llm=False, limit=None):
             llm_candidates += 1
             try:
                 classification.update(llm_classification(llm, base_data))
+                token_usage = classification.pop("_token_usage", {})
+                total_input_tokens += token_usage.get("input_tokens", 0)
+                total_output_tokens += token_usage.get("output_tokens", 0)
+                llm_succeeded_count += 1
                 llm_succeeded = True
             except Exception as error:
                 llm_error = str(error)
+                llm_fallback_count += 1
                 print(f"LLM failed for '{headline}': {error}. Using heuristic fallback.")
             time.sleep(4.5)
 
@@ -538,7 +704,8 @@ def import_items(xml_path, use_llm=False, limit=None):
             external_id=external_id[:255],
             ai_metadata={
                 "rss_source_url": rss_source_url,
-                "llm_provider": os.getenv("NEWS_LLM_PROVIDER", "") if llm_succeeded else "",
+                "llm_provider": "gemini" if llm_succeeded else "",
+                "llm_model": os.getenv("NEWS_LLM_MODEL", "gemini-3.1-flash-lite") if llm_succeeded else "",
                 "llm_fallback": bool(llm is not None and not llm_succeeded),
                 "llm_error": clamp_text(llm_error, 500) if llm_error else "",
                 "translation_locales": list(translations.keys()),
@@ -546,11 +713,24 @@ def import_items(xml_path, use_llm=False, limit=None):
         )
         created += 1
 
+    estimated_cost = (
+        (total_input_tokens / 1_000_000) * GEMINI_FLASH_LITE_INPUT_USD_PER_1M
+        + (total_output_tokens / 1_000_000) * GEMINI_FLASH_LITE_OUTPUT_USD_PER_1M
+    )
+
     print(
         "Import finished. "
         f"Created: {created}. Existing skipped: {existing}. "
-        f"XML duplicates skipped: {duplicate_in_xml}. Invalid skipped: {skipped}. "
-        f"LLM calls attempted: {llm_candidates}."
+        f"Old items skipped: {old_items}. XML duplicates skipped: {duplicate_in_xml}. "
+        f"Invalid skipped: {skipped}. "
+        f"LLM calls attempted: {llm_candidates}. "
+        f"LLM succeeded: {llm_succeeded_count}. LLM fallbacks: {llm_fallback_count}."
+    )
+    print(
+        "LLM usage summary. "
+        f"Input tokens: {total_input_tokens}. Output tokens: {total_output_tokens}. "
+        f"Total tokens: {total_input_tokens + total_output_tokens}. "
+        f"Estimated Gemini Flash-Lite cost: ${estimated_cost:.6f}."
     )
 
 
@@ -562,8 +742,13 @@ def main():
         )
     )
     parser.add_argument("--xml", default=str(DEFAULT_XML_PATH), help="Temporary unified XML path.")
-    parser.add_argument("--llm", action="store_true", help="Usa LangChain con NEWS_LLM_PROVIDER.")
+    parser.add_argument("--llm", action="store_true", help="Use Gemini to enrich new RSS items.")
     parser.add_argument("--limit", type=int, default=None, help="Limita el numero de noticias a importar.")
+    parser.add_argument(
+        "--min-published-at",
+        default=os.getenv("NEWS_MIN_PUBLISHED_AT", DEFAULT_MIN_PUBLISHED_AT),
+        help="Skip RSS items published before this YYYY-MM-DD date.",
+    )
     parser.add_argument(
         "--from-existing-xml",
         action="store_true",
@@ -581,7 +766,15 @@ def main():
     if not args.from_existing_xml:
         download_unified_rss(xml_path)
 
-    import_items(xml_path, use_llm=args.llm, limit=args.limit)
+    min_published_at = parse_min_published_at(args.min_published_at)
+    print(f"Minimum publication date: {args.min_published_at}")
+
+    import_items(
+        xml_path,
+        use_llm=args.llm,
+        limit=args.limit,
+        min_published_at=min_published_at,
+    )
 
     if not args.keep_xml and xml_path.exists():
         xml_path.unlink()

@@ -8,5 +8,4 @@ rss-parser
 requests
 beautifulsoup4
 langchain
-langchain-openai
 langchain-google-genai

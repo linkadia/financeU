@@ -1,6 +1,5 @@
 from decimal import Decimal
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import Q
@@ -61,9 +60,35 @@ class LearningLevel(models.Model):
 
 
 class Course(models.Model):
+    class Language(models.TextChoices):
+        ENGLISH = "en", "English"
+        POLISH = "pl", "Polish"
+
+    class SourceType(models.TextChoices):
+        INSTITUTIONAL = "institutional", "Institutional"
+        UNIVERSITY = "university", "University"
+        COMMERCIAL_PLATFORM = "commercial_platform", "Commercial platform"
+        INDEPENDENT_CREATOR = "independent_creator", "Independent creator"
+        MEDIA = "media", "Media"
+        CURATED = "curated", "Curated"
+
     title = models.CharField(max_length=180)
     slug = models.SlugField(max_length=200, unique=True)
     description = models.TextField(blank=True)
+    provider = models.CharField(max_length=160, blank=True)
+    source_type = models.CharField(
+        max_length=40,
+        choices=SourceType.choices,
+        default=SourceType.CURATED,
+        db_index=True,
+    )
+    external_url = models.URLField(max_length=500, blank=True, db_index=True)
+    language = models.CharField(
+        max_length=8,
+        choices=Language.choices,
+        default=Language.ENGLISH,
+        db_index=True,
+    )
     category = models.ForeignKey(
         LearningCategory,
         related_name="courses",
@@ -80,8 +105,10 @@ class Course(models.Model):
         on_delete=models.PROTECT,
     )
     thumbnail_url = models.URLField(max_length=500, blank=True)
+    cover_image_url = models.URLField(max_length=500, blank=True)
     estimated_duration_minutes = models.PositiveIntegerField(default=0)
     order = models.PositiveIntegerField(default=0, db_index=True)
+    is_required = models.BooleanField(default=True, db_index=True)
     is_active = models.BooleanField(default=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -95,6 +122,7 @@ class Course(models.Model):
             ),
         ]
         indexes = [
+            models.Index(fields=["language", "is_active", "order"]),
             models.Index(fields=["is_active", "category", "level", "course_type"]),
             models.Index(fields=["category", "order"]),
         ]
@@ -115,14 +143,63 @@ class Course(models.Model):
 
 
 class Lesson(models.Model):
+    class ContentType(models.TextChoices):
+        VIDEO = "video", "Video"
+        AUDIO = "audio", "Audio"
+        ARTICLE = "article", "Article"
+        COURSE = "course", "Course"
+        PODCAST = "podcast", "Podcast"
+        TOOL = "tool", "Tool"
+        GLOSSARY = "glossary", "Glossary"
+
+    class EmbedAccess(models.TextChoices):
+        ALLOWED = "true", "Allowed"
+        NOT_ALLOWED = "false", "Not allowed"
+        MANUAL_REVIEW = "manual_review", "Manual review"
+
     course = models.ForeignKey(Course, related_name="lessons", on_delete=models.CASCADE)
     title = models.CharField(max_length=180)
     slug = models.SlugField(max_length=200)
     description = models.TextField(blank=True)
-    youtube_url = models.URLField(max_length=500)
-    youtube_video_id = models.CharField(max_length=32, db_index=True)
+    content_type = models.CharField(
+        max_length=20,
+        choices=ContentType.choices,
+        default=ContentType.VIDEO,
+        db_index=True,
+    )
+    provider = models.CharField(max_length=120, blank=True)
+    source_channel = models.CharField(max_length=180, blank=True)
+    source_url = models.URLField(max_length=500, blank=True)
+    external_url = models.URLField(max_length=500, blank=True, db_index=True)
+    embed_url = models.URLField(max_length=500, blank=True)
+    image_url = models.URLField(max_length=500, blank=True)
+    content_language = models.CharField(max_length=8, blank=True, db_index=True)
+    level = models.ForeignKey(
+        LearningLevel,
+        related_name="lessons",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+    )
+    category = models.ForeignKey(
+        LearningCategory,
+        related_name="lessons",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+    )
+    youtube_url = models.URLField(max_length=500, blank=True)
+    youtube_video_id = models.CharField(max_length=32, blank=True, db_index=True)
     duration_minutes = models.PositiveIntegerField(default=0)
     summary = models.TextField(blank=True)
+    embed_allowed = models.CharField(
+        max_length=20,
+        choices=EmbedAccess.choices,
+        default=EmbedAccess.MANUAL_REVIEW,
+        db_index=True,
+    )
+    requires_disclaimer = models.BooleanField(default=False, db_index=True)
+    disclaimer = models.TextField(blank=True)
     order = models.PositiveIntegerField(default=0, db_index=True)
     is_active = models.BooleanField(default=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -154,8 +231,12 @@ class LessonQuiz(models.Model):
         related_name="quiz",
         on_delete=models.CASCADE,
     )
+    title = models.CharField(max_length=180, blank=True)
+    description = models.TextField(blank=True)
     question = models.TextField()
     explanation = models.TextField(blank=True)
+    passing_score = models.PositiveIntegerField(default=100)
+    is_required = models.BooleanField(default=True, db_index=True)
     is_active = models.BooleanField(default=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -169,10 +250,53 @@ class LessonQuiz(models.Model):
         return f"Quiz: {self.lesson.title}"
 
 
+class LessonQuizQuestion(models.Model):
+    class QuestionType(models.TextChoices):
+        SINGLE_CHOICE = "single_choice", "Single choice"
+        MULTIPLE_CHOICE = "multiple_choice", "Multiple choice"
+        TRUE_FALSE = "true_false", "True/false"
+
+    quiz = models.ForeignKey(
+        LessonQuiz,
+        related_name="questions",
+        on_delete=models.CASCADE,
+    )
+    question = models.TextField()
+    question_type = models.CharField(
+        max_length=30,
+        choices=QuestionType.choices,
+        default=QuestionType.SINGLE_CHOICE,
+    )
+    explanation = models.TextField(blank=True)
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["quiz__lesson__course", "quiz__lesson__order", "order"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["quiz", "order"],
+                name="unique_learning_quiz_question_order",
+            ),
+        ]
+
+    def __str__(self):
+        return self.question
+
+
 class LessonQuizOption(models.Model):
     quiz = models.ForeignKey(
         LessonQuiz,
         related_name="options",
+        on_delete=models.CASCADE,
+    )
+    question = models.ForeignKey(
+        LessonQuizQuestion,
+        related_name="options",
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
     )
     text = models.CharField(max_length=255)
@@ -184,12 +308,23 @@ class LessonQuizOption(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["quiz", "order"],
-                name="unique_learning_quiz_option_order",
+                condition=Q(question__isnull=True),
+                name="unique_learning_legacy_quiz_option_order",
+            ),
+            models.UniqueConstraint(
+                fields=["question", "order"],
+                condition=Q(question__isnull=False),
+                name="unique_learning_question_option_order",
             ),
             models.UniqueConstraint(
                 fields=["quiz"],
-                condition=Q(is_correct=True),
-                name="unique_learning_correct_option_per_quiz",
+                condition=Q(question__isnull=True, is_correct=True),
+                name="unique_learning_legacy_correct_option_per_quiz",
+            ),
+            models.UniqueConstraint(
+                fields=["question"],
+                condition=Q(question__isnull=False, is_correct=True),
+                name="unique_learning_correct_option_per_question",
             ),
         ]
 
@@ -204,7 +339,7 @@ class UserLessonProgress(models.Model):
         COMPLETED = "completed", "Completed"
 
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        "users.UserProfile",
         related_name="learning_lesson_progress",
         on_delete=models.CASCADE,
     )
@@ -230,6 +365,7 @@ class UserLessonProgress(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
     )
+    selected_options = models.JSONField(default=dict, blank=True)
     attempts = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -318,7 +454,7 @@ class UserLessonProgress(models.Model):
 
 class UserCourseProgress(models.Model):
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        "users.UserProfile",
         related_name="learning_course_progress",
         on_delete=models.CASCADE,
     )

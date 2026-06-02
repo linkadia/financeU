@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Zacznij tutaj</title>
+  <desc id="desc">Decorative learning lesson cover</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17324a"/>
+      <stop offset="1" stop-color="#080d18"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="72%" cy="24%" r="62%">
+      <stop offset="0" stop-color="#38bdf8" stop-opacity=".68"/>
+      <stop offset="1" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <rect width="1200" height="675" fill="url(#glow)"/>
+  <path d="M0 535 C205 430 350 585 565 510 C780 435 905 315 1200 385 V675 H0 Z" fill="#38bdf8" opacity=".14"/>
+  
+  <path d="M310 285 H860 Q930 285 930 355 Q930 425 860 425 H390" fill="none" stroke="#38bdf8" stroke-width="30" stroke-linecap="round"/>
+  <path d="M425 205 L310 285 L425 365 M815 345 L930 425 L815 505" fill="none" stroke="#38bdf8" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="490" cy="425" r="70" fill="#e0f2fe" opacity=".24"/>
+  <circle cx="740" cy="285" r="70" fill="#e0f2fe" opacity=".24"/>
+
+</svg>

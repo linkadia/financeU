@@ -4,6 +4,7 @@ import TopBar from '../components/layout/TopBar';
 import BottomNav from '../components/layout/BottomNav';
 import GlassCard from '../components/ui/GlassCard';
 import CategoryChips from '../components/ui/CategoryChips';
+import MarketCarousel from '../components/market/MarketCarousel';
 import { getNewsArticles } from '../api/content';
 import { getCourses } from '../data/localizedCourses';
 import { useI18n } from '../i18n/I18nContext';
@@ -587,6 +588,13 @@ export default function Dashboard() {
               className="py-0"
             />
           </div>
+
+          <MarketCarousel
+            lang={language}
+            selectedFeedFilter={activeCategory}
+            userInterests={currentUser?.onboarding_interests ?? []}
+            searchQuery={newsSearchQuery}
+          />
 
           {isLoadingNews && (
             <GlassCard className="p-6 text-center font-body-md text-body-md text-on-surface-variant">

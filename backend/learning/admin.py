@@ -7,6 +7,7 @@ from .models import (
     LearningLevel,
     Lesson,
     LessonQuiz,
+    LessonQuizQuestion,
     LessonQuizOption,
     UserCourseProgress,
     UserLessonProgress,
@@ -43,7 +44,10 @@ class LessonInline(admin.TabularInline):
     fields = (
         "title",
         "slug",
-        "youtube_video_id",
+        "content_type",
+        "provider",
+        "embed_allowed",
+        "requires_disclaimer",
         "duration_minutes",
         "order",
         "is_active",
@@ -56,14 +60,17 @@ class LessonInline(admin.TabularInline):
 class CourseAdmin(admin.ModelAdmin):
     list_display = (
         "title",
+        "provider",
+        "source_type",
         "category",
         "course_type",
         "level",
+        "language",
         "estimated_duration_minutes",
         "order",
         "is_active",
     )
-    list_filter = ("category", "course_type", "level", "is_active")
+    list_filter = ("language", "source_type", "category", "course_type", "level", "is_active")
     list_editable = ("order", "is_active")
     prepopulated_fields = {"slug": ("title",)}
     search_fields = ("title", "description")
@@ -73,16 +80,23 @@ class CourseAdmin(admin.ModelAdmin):
 class LessonQuizOptionInline(admin.TabularInline):
     model = LessonQuizOption
     extra = 4
-    fields = ("text", "is_correct", "order")
+    fields = ("question", "text", "is_correct", "order")
+
+
+class LessonQuizQuestionInline(admin.TabularInline):
+    model = LessonQuizQuestion
+    extra = 0
+    fields = ("question", "explanation", "order", "is_active")
+    show_change_link = True
 
 
 @admin.register(LessonQuiz)
 class LessonQuizAdmin(admin.ModelAdmin):
-    list_display = ("lesson", "is_active", "created_at", "updated_at")
-    list_filter = ("is_active", "lesson__course")
+    list_display = ("lesson", "passing_score", "is_required", "is_active", "created_at", "updated_at")
+    list_filter = ("is_required", "is_active", "lesson__course")
     search_fields = ("lesson__title", "question", "explanation")
     autocomplete_fields = ("lesson",)
-    inlines = [LessonQuizOptionInline]
+    inlines = [LessonQuizQuestionInline, LessonQuizOptionInline]
 
 
 class LessonQuizInline(admin.StackedInline):
@@ -96,26 +110,39 @@ class LessonAdmin(admin.ModelAdmin):
     list_display = (
         "title",
         "course",
-        "youtube_video_id",
+        "content_type",
+        "provider",
+        "embed_allowed",
+        "requires_disclaimer",
         "duration_minutes",
         "order",
         "is_active",
     )
-    list_filter = ("course", "is_active")
+    list_filter = ("course", "content_type", "embed_allowed", "requires_disclaimer", "is_active")
     list_editable = ("order", "is_active")
     prepopulated_fields = {"slug": ("title",)}
-    search_fields = ("title", "description", "summary", "youtube_video_id")
+    search_fields = ("title", "description", "summary", "youtube_video_id", "provider")
     autocomplete_fields = ("course",)
     inlines = [LessonQuizInline]
 
 
+@admin.register(LessonQuizQuestion)
+class LessonQuizQuestionAdmin(admin.ModelAdmin):
+    list_display = ("question", "quiz", "question_type", "order", "is_active")
+    list_filter = ("question_type", "is_active", "quiz__lesson__course")
+    list_editable = ("order", "is_active")
+    search_fields = ("question", "explanation", "quiz__lesson__title")
+    autocomplete_fields = ("quiz",)
+    inlines = [LessonQuizOptionInline]
+
+
 @admin.register(LessonQuizOption)
 class LessonQuizOptionAdmin(admin.ModelAdmin):
-    list_display = ("text", "quiz", "is_correct", "order")
+    list_display = ("text", "quiz", "question", "is_correct", "order")
     list_filter = ("is_correct", "quiz__lesson__course")
     list_editable = ("is_correct", "order")
-    search_fields = ("text", "quiz__question", "quiz__lesson__title")
-    autocomplete_fields = ("quiz",)
+    search_fields = ("text", "question__question", "quiz__question", "quiz__lesson__title")
+    autocomplete_fields = ("quiz", "question")
 
 
 @admin.register(UserLessonProgress)
@@ -126,6 +153,7 @@ class UserLessonProgressAdmin(admin.ModelAdmin):
         "status",
         "quiz_answered_correctly",
         "attempts",
+        "selected_options",
         "started_at",
         "completed_at",
     )

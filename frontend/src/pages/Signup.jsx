@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { createUserProfile } from '../api/users';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useI18n } from '../i18n/I18nContext';
+import { translateApiError } from '../utils/apiErrors';
 import { setCurrentUser } from '../utils/session';
 
 const LOGO_URL =
@@ -56,7 +57,7 @@ export default function Signup() {
       setError('');
       navigate('/onboarding/step1');
     } catch (requestError) {
-      setError(requestError.message);
+      setError(translateApiError(requestError, t));
     } finally {
       setIsSubmitting(false);
     }

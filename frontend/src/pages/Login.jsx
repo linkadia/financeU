@@ -3,14 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { loginUser } from '../api/users';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useI18n } from '../i18n/I18nContext';
+import { translateApiError } from '../utils/apiErrors';
 import { getCurrentUser, setCurrentUser } from '../utils/session';
 
 const LOGO_URL =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuBEVed2cAWQhnZmCYEo8c7WnwYIxlNA8zO2VYCdovKuhg8KE8xlG8sQc2GXEJnMN9ixwYTJD6kYNpQY5zWsG8phfAnIPEbAVRwXXhi7uF2IfyHaMDGbrS9cbxmQ1uKXP6_JVfyznFvUHS4BGbnL8Lj_2hsO94H0FvU3lASYXdyoEWPjreBt9DIb-X8ccHLAdA3bkAYarOgY9tIlEr69X5ypl3nQV1XMAKsFN-5xraYqqsprwwB8RJ_DjBwylcNmUSw_KIjXOL-fLu0L';
-
-function getThrottleMessage(seconds) {
-  return `Has realizado demasiados intentos. Por seguridad, intentalo de nuevo en ${seconds} segundos.`;
-}
 
 export default function Login() {
   const navigate = useNavigate();
@@ -32,7 +29,7 @@ export default function Login() {
   useEffect(() => {
     if (retryAfter <= 0) return undefined;
 
-    setError(getThrottleMessage(retryAfter));
+    setError(t('errors.throttled', { seconds: String(retryAfter) }));
     const timeoutId = window.setTimeout(() => {
       setRetryAfter((current) => Math.max(current - 1, 0));
     }, 1000);
@@ -56,7 +53,7 @@ export default function Login() {
       if (requestError.status === 429 && requestError.secondsRemaining) {
         setRetryAfter(requestError.secondsRemaining);
       }
-      setError(requestError.message);
+      setError(translateApiError(requestError, t));
     } finally {
       setIsSubmitting(false);
     }

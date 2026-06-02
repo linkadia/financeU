@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Coinbase Learn</title>
+  <desc id="desc">Decorative learning course cover</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2f1b60"/>
+      <stop offset="1" stop-color="#0b1020"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="76%" cy="28%" r="60%">
+      <stop offset="0" stop-color="#f7931a" stop-opacity=".72"/>
+      <stop offset="1" stop-color="#f7931a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <rect width="1200" height="675" fill="url(#glow)"/>
+  <circle cx="1040" cy="110" r="230" fill="#f7931a" opacity=".08"/>
+  <circle cx="135" cy="600" r="280" fill="#ffffff" opacity=".045"/>
+  <path d="M0 500 C180 420 300 610 520 520 S870 360 1200 455 V675 H0 Z" fill="#f7931a" opacity=".16"/>
+  
+  <polygon points="600,92 845,235 845,520 600,663 355,520 355,235" fill="#f7931a" opacity=".22"/>
+  <polygon points="600,145 795,260 795,495 600,610 405,495 405,260" fill="none" stroke="#f7931a" stroke-width="18"/>
+  <circle cx="600" cy="378" r="120" fill="#f7e9ff" opacity=".22"/>
+  <path d="M520 312 H635 Q705 312 705 372 Q705 432 635 432 H520 M560 262 V492 M635 262 V492" fill="none" stroke="#f7e9ff" stroke-width="24" stroke-linecap="round"/>
+
+</svg>

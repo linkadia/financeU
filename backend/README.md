@@ -1,6 +1,6 @@
-# Finan3 Backend
+# Finanu Backend
 
-Django + Django REST Framework backend for Finan3.
+Django + Django REST Framework backend for Finanu.
 
 ## Desarrollo en red local
 

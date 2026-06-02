@@ -1,0 +1,1321 @@
+[
+  {
+    "course_id": 1,
+    "course_order": 1,
+    "course_name": "Crypto Basics",
+    "language": "en",
+    "category": "crypto",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/en-01-crypto-basics.svg",
+    "cover_image_url": "/learning/course-covers/en-01-crypto-basics.svg",
+    "current_active": false,
+    "recommended_active": false,
+    "recommended_action": "inactive_legacy_duplicate",
+    "review_notes": "Duplicado antiguo de Bitcoin/crypto, sin provider ni disclaimer; mantener inactivo.",
+    "lessons": [
+      {
+        "lesson_id": 1,
+        "lesson_order": 1,
+        "lesson_name": "What is Bitcoin?",
+        "content_type": "video",
+        "content_url": "https://www.youtube.com/watch?v=Gc2en3nHxA4",
+        "current_active": false,
+        "recommended_active": false,
+        "review_notes": "Falta provider en la leccion. Conviene anadir disclaimer educativo. Mantener inactiva salvo reutilizacion curada en una ruta nueva.",
+        "image_url": "",
+        "youtube_video_id": "Gc2en3nHxA4",
+        "visual_source": "youtube_thumbnail"
+      },
+      {
+        "lesson_id": 2,
+        "lesson_order": 2,
+        "lesson_name": "Crypto Wallets Explained",
+        "content_type": "video",
+        "content_url": "https://www.youtube.com/watch?v=AQO7KePXUEQ",
+        "current_active": false,
+        "recommended_active": false,
+        "review_notes": "Falta provider en la leccion. Conviene anadir disclaimer educativo. Mantener inactiva salvo reutilizacion curada en una ruta nueva.",
+        "image_url": "",
+        "youtube_video_id": "AQO7KePXUEQ",
+        "visual_source": "youtube_thumbnail"
+      }
+    ]
+  },
+  {
+    "course_id": 4,
+    "course_order": 1,
+    "course_name": "Money Habits Starter",
+    "language": "en",
+    "category": "personal-finance",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/en-01-money-habits-starter.svg",
+    "cover_image_url": "/learning/course-covers/en-01-money-habits-starter.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active_improve_metadata",
+    "review_notes": "Curso inicial recomendado: empieza por presupuesto, alfabetizacion financiera y contexto economico ligero.",
+    "lessons": [
+      {
+        "lesson_id": 7,
+        "lesson_order": 1,
+        "lesson_name": "Budgeting Basics",
+        "content_type": "video",
+        "content_url": "https://www.youtube.com/watch?v=sVKQn2I4HDM",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "",
+        "youtube_video_id": "sVKQn2I4HDM",
+        "visual_source": "youtube_thumbnail"
+      },
+      {
+        "lesson_id": 8,
+        "lesson_order": 2,
+        "lesson_name": "Financial Literacy Course",
+        "content_type": "course",
+        "content_url": "https://www.khanacademy.org/college-careers-more/financial-literacy",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/en-01-4-02-financial-literacy-course.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      },
+      {
+        "lesson_id": 9,
+        "lesson_order": 3,
+        "lesson_name": "Planet Money Podcast",
+        "content_type": "audio",
+        "content_url": "https://www.npr.org/podcasts/510289/planet-money",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/en-01-4-03-planet-money-podcast.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 2,
+    "course_order": 2,
+    "course_name": "Forex Foundations",
+    "language": "en",
+    "category": "forex",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/en-02-forex-foundations.svg",
+    "cover_image_url": "/learning/course-covers/en-02-forex-foundations.svg",
+    "current_active": false,
+    "recommended_active": false,
+    "recommended_action": "inactive_legacy_duplicate",
+    "review_notes": "Duplicado antiguo de Forex, sin provider ni disclaimer; mantener inactivo.",
+    "lessons": [
+      {
+        "lesson_id": 3,
+        "lesson_order": 1,
+        "lesson_name": "Currency Pairs",
+        "content_type": "video",
+        "content_url": "https://www.youtube.com/watch?v=YGUyI6K3eWY",
+        "current_active": false,
+        "recommended_active": false,
+        "review_notes": "Falta provider en la leccion. Conviene anadir disclaimer educativo. Mantener inactiva salvo reutilizacion curada en una ruta nueva.",
+        "image_url": "",
+        "youtube_video_id": "YGUyI6K3eWY",
+        "visual_source": "youtube_thumbnail"
+      },
+      {
+        "lesson_id": 4,
+        "lesson_order": 2,
+        "lesson_name": "Risk in Forex",
+        "content_type": "video",
+        "content_url": "https://www.youtube.com/watch?v=0hL6ywQzE78",
+        "current_active": false,
+        "recommended_active": false,
+        "review_notes": "Falta provider en la leccion. Conviene anadir disclaimer educativo. Mantener inactiva salvo reutilizacion curada en una ruta nueva.",
+        "image_url": "",
+        "youtube_video_id": "0hL6ywQzE78",
+        "visual_source": "youtube_thumbnail"
+      }
+    ]
+  },
+  {
+    "course_id": 15,
+    "course_order": 2,
+    "course_name": "OpenLearn Money and Business Free Courses",
+    "language": "en",
+    "category": "personal-finance",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/en-02-openlearn-money-and-business-free-courses.svg",
+    "cover_image_url": "/learning/course-covers/en-02-openlearn-money-and-business-free-courses.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Fuente fiable y complementaria para el Learning Centre.",
+    "lessons": [
+      {
+        "lesson_id": 25,
+        "lesson_order": 1,
+        "lesson_name": "Start here",
+        "content_type": "course",
+        "content_url": "https://www.open.edu/openlearn/money-management/free-courses",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/en-02-15-01-start-here.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 6,
+    "course_order": 3,
+    "course_name": "Crypto and Forex Risk",
+    "language": "en",
+    "category": "crypto",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/en-03-crypto-and-forex-risk.svg",
+    "cover_image_url": "/learning/course-covers/en-03-crypto-and-forex-risk.svg",
+    "current_active": false,
+    "recommended_active": false,
+    "recommended_action": "inactive_mixed_duplicate",
+    "review_notes": "Mezcla Crypto y Forex y duplica Bitcoin/Forex; sustituido por rutas dedicadas Binance/BabyPips.",
+    "lessons": [
+      {
+        "lesson_id": 11,
+        "lesson_order": 1,
+        "lesson_name": "What is Bitcoin?",
+        "content_type": "video",
+        "content_url": "https://www.youtube.com/watch?v=Gc2en3nHxA4",
+        "current_active": false,
+        "recommended_active": false,
+        "review_notes": "Conviene anadir disclaimer educativo. Mantener inactiva salvo reutilizacion curada en una ruta nueva.",
+        "image_url": "",
+        "youtube_video_id": "Gc2en3nHxA4",
+        "visual_source": "youtube_thumbnail"
+      },
+      {
+        "lesson_id": 12,
+        "lesson_order": 2,
+        "lesson_name": "Forex Risk Basics",
+        "content_type": "video",
+        "content_url": "https://www.youtube.com/watch?v=YGUyI6K3eWY",
+        "current_active": false,
+        "recommended_active": false,
+        "review_notes": "Conviene anadir disclaimer educativo. Mantener inactiva salvo reutilizacion curada en una ruta nueva.",
+        "image_url": "",
+        "youtube_video_id": "YGUyI6K3eWY",
+        "visual_source": "youtube_thumbnail"
+      }
+    ]
+  },
+  {
+    "course_id": 11,
+    "course_order": 3,
+    "course_name": "Khan Academy Economics",
+    "language": "en",
+    "category": "economics",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/en-03-khan-academy-economics.svg",
+    "cover_image_url": "/learning/course-covers/en-03-khan-academy-economics.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Fuente fiable y complementaria para el Learning Centre.",
+    "lessons": [
+      {
+        "lesson_id": 21,
+        "lesson_order": 1,
+        "lesson_name": "Start here",
+        "content_type": "course",
+        "content_url": "https://www.khanacademy.org/economics-finance-domain",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/en-03-11-01-start-here.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 3,
+    "course_order": 3,
+    "course_name": "Personal Finance Starter",
+    "language": "en",
+    "category": "personal-finance",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/en-03-personal-finance-starter.svg",
+    "cover_image_url": "/learning/course-covers/en-03-personal-finance-starter.svg",
+    "current_active": false,
+    "recommended_active": false,
+    "recommended_action": "inactive_legacy_duplicate",
+    "review_notes": "Duplicado antiguo de Money Habits Starter; mantener inactivo.",
+    "lessons": [
+      {
+        "lesson_id": 5,
+        "lesson_order": 1,
+        "lesson_name": "Budgeting Basics",
+        "content_type": "video",
+        "content_url": "https://www.youtube.com/watch?v=sVKQn2I4HDM",
+        "current_active": false,
+        "recommended_active": false,
+        "review_notes": "Falta provider en la leccion. Mantener inactiva salvo reutilizacion curada en una ruta nueva.",
+        "image_url": "",
+        "youtube_video_id": "sVKQn2I4HDM",
+        "visual_source": "youtube_thumbnail"
+      },
+      {
+        "lesson_id": 6,
+        "lesson_order": 2,
+        "lesson_name": "Emergency Funds",
+        "content_type": "video",
+        "content_url": "https://www.youtube.com/watch?v=fVToMS2Q3XQ",
+        "current_active": false,
+        "recommended_active": false,
+        "review_notes": "Falta provider en la leccion. Mantener inactiva salvo reutilizacion curada en una ruta nueva.",
+        "image_url": "",
+        "youtube_video_id": "fVToMS2Q3XQ",
+        "visual_source": "youtube_thumbnail"
+      }
+    ]
+  },
+  {
+    "course_id": 10,
+    "course_order": 4,
+    "course_name": "Khan Academy Finance and Capital Markets",
+    "language": "en",
+    "category": "investing",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/en-04-khan-academy-finance-and-capital-markets.svg",
+    "cover_image_url": "/learning/course-covers/en-04-khan-academy-finance-and-capital-markets.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Fuente fiable y complementaria para el Learning Centre.",
+    "lessons": [
+      {
+        "lesson_id": 20,
+        "lesson_order": 1,
+        "lesson_name": "Start here",
+        "content_type": "course",
+        "content_url": "https://www.khanacademy.org/economics-finance-domain/core-finance",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/en-04-10-01-start-here.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 5,
+    "course_order": 5,
+    "course_name": "Investing Foundations",
+    "language": "en",
+    "category": "investing",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/en-05-investing-foundations.svg",
+    "cover_image_url": "/learning/course-covers/en-05-investing-foundations.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active_add_disclaimer",
+    "review_notes": "Introduccion basica a ETFs despues de fundamentos financieros/economicos.",
+    "lessons": [
+      {
+        "lesson_id": 10,
+        "lesson_order": 1,
+        "lesson_name": "ETF Basics",
+        "content_type": "article",
+        "content_url": "https://www.investopedia.com/terms/e/etf.asp",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "Conviene anadir disclaimer educativo.",
+        "image_url": "/learning/lesson-covers/en-05-5-01-etf-basics.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 14,
+    "course_order": 6,
+    "course_name": "OpenLearn Managing My Investments",
+    "language": "en",
+    "category": "investing",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/en-06-openlearn-managing-my-investments.svg",
+    "cover_image_url": "/learning/course-covers/en-06-openlearn-managing-my-investments.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Fuente fiable y complementaria para el Learning Centre.",
+    "lessons": [
+      {
+        "lesson_id": 24,
+        "lesson_order": 1,
+        "lesson_name": "Start here",
+        "content_type": "course",
+        "content_url": "https://www.open.edu/openlearn/money-business/managing-my-investments",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/en-06-14-01-start-here.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 16,
+    "course_order": 7,
+    "course_name": "Binance Academy",
+    "language": "en",
+    "category": "crypto",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/en-07-binance-academy.svg",
+    "cover_image_url": "/learning/course-covers/en-07-binance-academy.svg",
+    "current_active": false,
+    "recommended_active": false,
+    "recommended_action": "inactive_generic_duplicate",
+    "review_notes": "Pagina general comercial; mantener inactiva y usar Binance Academy Courses como recurso estructurado.",
+    "lessons": [
+      {
+        "lesson_id": 26,
+        "lesson_order": 1,
+        "lesson_name": "Start here",
+        "content_type": "article",
+        "content_url": "https://www.binance.com/en/academy",
+        "current_active": false,
+        "recommended_active": false,
+        "review_notes": "Mantener inactiva salvo reutilizacion curada en una ruta nueva.",
+        "image_url": "/learning/lesson-covers/en-07-16-01-start-here.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 17,
+    "course_order": 7,
+    "course_name": "Binance Academy Courses",
+    "language": "en",
+    "category": "crypto",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/en-07-binance-academy-courses.svg",
+    "cover_image_url": "/learning/course-covers/en-07-binance-academy-courses.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active_commercial_review",
+    "review_notes": "Curso crypto beginner, ubicado despues de finanzas/economia/inversion basica por riesgo tematico.",
+    "lessons": [
+      {
+        "lesson_id": 27,
+        "lesson_order": 1,
+        "lesson_name": "Start here",
+        "content_type": "course",
+        "content_url": "https://www.binance.com/en/academy/courses",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/en-07-17-01-start-here.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 19,
+    "course_order": 8,
+    "course_name": "Coinbase Learn Tips and Tutorials",
+    "language": "en",
+    "category": "crypto",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/en-08-coinbase-learn-tips-and-tutorials.svg",
+    "cover_image_url": "/learning/course-covers/en-08-coinbase-learn-tips-and-tutorials.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active_commercial_review",
+    "review_notes": "Tutoriales crypto practicos, despues del curso crypto estructurado.",
+    "lessons": [
+      {
+        "lesson_id": 29,
+        "lesson_order": 1,
+        "lesson_name": "Start here",
+        "content_type": "article",
+        "content_url": "https://www.coinbase.com/learn/tips-and-tutorials",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/en-08-19-01-start-here.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 20,
+    "course_order": 9,
+    "course_name": "BabyPips School of Pipsology",
+    "language": "en",
+    "category": "forex",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/en-09-babypips-school-of-pipsology.svg",
+    "cover_image_url": "/learning/course-covers/en-09-babypips-school-of-pipsology.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active_review_periodically",
+    "review_notes": "Forex beginner, ubicado tras fundamentos e inversion basica por riesgo y complejidad.",
+    "lessons": [
+      {
+        "lesson_id": 30,
+        "lesson_order": 1,
+        "lesson_name": "Start here",
+        "content_type": "course",
+        "content_url": "https://www.babypips.com/learn/forex",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/en-09-20-01-start-here.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 18,
+    "course_order": 9,
+    "course_name": "Coinbase Learn",
+    "language": "en",
+    "category": "crypto",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/en-09-coinbase-learn.svg",
+    "cover_image_url": "/learning/course-covers/en-09-coinbase-learn.svg",
+    "current_active": false,
+    "recommended_active": false,
+    "recommended_action": "inactive_generic_duplicate",
+    "review_notes": "Pagina general comercial solapada con Binance/Coinbase tutorials; mantener inactiva.",
+    "lessons": [
+      {
+        "lesson_id": 28,
+        "lesson_order": 1,
+        "lesson_name": "Start here",
+        "content_type": "article",
+        "content_url": "https://www.coinbase.com/en-es/learn",
+        "current_active": false,
+        "recommended_active": false,
+        "review_notes": "Mantener inactiva salvo reutilizacion curada en una ruta nueva.",
+        "image_url": "/learning/lesson-covers/en-09-18-01-start-here.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 21,
+    "course_order": 10,
+    "course_name": "Investopedia Express",
+    "language": "en",
+    "category": "economics",
+    "level": "intermediate",
+    "thumbnail_url": "/learning/course-covers/en-10-investopedia-express.svg",
+    "cover_image_url": "/learning/course-covers/en-10-investopedia-express.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Podcast intermedio de contexto de mercado, despues de recursos beginner.",
+    "lessons": [
+      {
+        "lesson_id": 31,
+        "lesson_order": 1,
+        "lesson_name": "Start here",
+        "content_type": "podcast",
+        "content_url": "https://www.investopedia.com/the-investopedia-express-podcast-5215636",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/en-10-21-01-start-here.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 12,
+    "course_order": 11,
+    "course_name": "Yale Financial Markets",
+    "language": "en",
+    "category": "investing",
+    "level": "intermediate",
+    "thumbnail_url": "/learning/course-covers/en-11-yale-financial-markets.svg",
+    "cover_image_url": "/learning/course-covers/en-11-yale-financial-markets.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Intermedio universitario; va despues de la base y antes de MIT.",
+    "lessons": [
+      {
+        "lesson_id": 22,
+        "lesson_order": 1,
+        "lesson_name": "Start here",
+        "content_type": "course",
+        "content_url": "https://online.yale.edu/courses/financial-markets",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/en-11-12-01-start-here.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 13,
+    "course_order": 12,
+    "course_name": "MIT Finance Theory I",
+    "language": "en",
+    "category": "investing",
+    "level": "advanced",
+    "thumbnail_url": "/learning/course-covers/en-12-mit-finance-theory-i.svg",
+    "cover_image_url": "/learning/course-covers/en-12-mit-finance-theory-i.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Avanzado; debe ser de los ultimos por dificultad tecnica.",
+    "lessons": [
+      {
+        "lesson_id": 23,
+        "lesson_order": 1,
+        "lesson_name": "Start here",
+        "content_type": "course",
+        "content_url": "https://ocw.mit.edu/courses/15-401-finance-theory-i-fall-2008/",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/en-12-13-01-start-here.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 7,
+    "course_order": 1,
+    "course_name": "Finanse osobiste po polsku",
+    "language": "pl",
+    "category": "personal-finance",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/pl-01-finanse-osobiste-po-polsku.svg",
+    "cover_image_url": "/learning/course-covers/pl-01-finanse-osobiste-po-polsku.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active_improve_metadata",
+    "review_notes": "Primer curso PL recomendado: finanzas personales antes de inversion y crypto.",
+    "lessons": [
+      {
+        "lesson_id": 13,
+        "lesson_order": 1,
+        "lesson_name": "Sprawdzone sposoby bogacenia się",
+        "content_type": "video",
+        "content_url": "https://www.youtube.com/watch?v=FfhSj9hXykw",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "",
+        "youtube_video_id": "FfhSj9hXykw",
+        "visual_source": "youtube_thumbnail"
+      },
+      {
+        "lesson_id": 14,
+        "lesson_order": 2,
+        "lesson_name": "40 lat i kasy brak",
+        "content_type": "video",
+        "content_url": "https://www.youtube.com/watch?v=w6ovkxeXaOg",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "",
+        "youtube_video_id": "w6ovkxeXaOg",
+        "visual_source": "youtube_thumbnail"
+      },
+      {
+        "lesson_id": 15,
+        "lesson_order": 3,
+        "lesson_name": "Finanse Bardzo Osobiste Podcast",
+        "content_type": "audio",
+        "content_url": "https://marciniwuc.com/podcast/",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/pl-01-7-03-finanse-bardzo-osobiste-podcast.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 37,
+    "course_order": 2,
+    "course_name": "Marcin Iwuc Finanse Bardzo Osobiste",
+    "language": "pl",
+    "category": "personal-finance",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/pl-02-marcin-iwuc-finanse-bardzo-osobiste.svg",
+    "cover_image_url": "/learning/course-covers/pl-02-marcin-iwuc-finanse-bardzo-osobiste.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active_review_periodically",
+    "review_notes": "Fuente independiente relevante; revisar periodicidad y calidad editorial.",
+    "lessons": [
+      {
+        "lesson_id": 47,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "article",
+        "content_url": "https://marciniwuc.com/",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/pl-02-37-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 39,
+    "course_order": 3,
+    "course_name": "Finanse Bardzo Osobiste Apple Podcasts",
+    "language": "pl",
+    "category": "personal-finance",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/pl-03-finanse-bardzo-osobiste-apple-podcasts.svg",
+    "cover_image_url": "/learning/course-covers/pl-03-finanse-bardzo-osobiste-apple-podcasts.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active_review_periodically",
+    "review_notes": "Fuente independiente relevante; revisar periodicidad y calidad editorial.",
+    "lessons": [
+      {
+        "lesson_id": 49,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "podcast",
+        "content_url": "https://podcasts.apple.com/pl/podcast/finanse-bardzo-osobiste-oszcz%C4%99dzanie-inwestowanie-pieni%C4%85dze/id946719109",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/pl-03-39-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 31,
+    "course_order": 4,
+    "course_name": "UOKiK Finanse",
+    "language": "pl",
+    "category": "personal-finance",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/pl-04-uokik-finanse.svg",
+    "cover_image_url": "/learning/course-covers/pl-04-uokik-finanse.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Fuente fiable y complementaria para el Learning Centre.",
+    "lessons": [
+      {
+        "lesson_id": 41,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "tool",
+        "content_url": "https://finanse.uokik.gov.pl/category/kredyty-konsumenckie/",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/pl-04-31-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 28,
+    "course_order": 5,
+    "course_name": "KNF Edukacja finansowa CEDUR",
+    "language": "pl",
+    "category": "personal-finance",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/pl-05-knf-edukacja-finansowa-cedur.svg",
+    "cover_image_url": "/learning/course-covers/pl-05-knf-edukacja-finansowa-cedur.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Fuente fiable y complementaria para el Learning Centre.",
+    "lessons": [
+      {
+        "lesson_id": 38,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "article",
+        "content_url": "https://www.knf.gov.pl/edukacja_finansowa",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/pl-05-28-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 29,
+    "course_order": 6,
+    "course_name": "KNF Publikacje edukacyjne",
+    "language": "pl",
+    "category": "personal-finance",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/pl-06-knf-publikacje-edukacyjne.svg",
+    "cover_image_url": "/learning/course-covers/pl-06-knf-publikacje-edukacyjne.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Fuente fiable y complementaria para el Learning Centre.",
+    "lessons": [
+      {
+        "lesson_id": 39,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "article",
+        "content_url": "https://www.knf.gov.pl/co_robimy/publikacje_edukacyjne",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/pl-06-29-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 9,
+    "course_order": 6,
+    "course_name": "Krypto i ekonomia bez pośpiechu",
+    "language": "pl",
+    "category": "economics",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/pl-06-krypto-i-ekonomia-bez-po-piechu.svg",
+    "cover_image_url": "/learning/course-covers/pl-06-krypto-i-ekonomia-bez-po-piechu.svg",
+    "current_active": false,
+    "recommended_active": false,
+    "recommended_action": "inactive_mixed_category",
+    "review_notes": "Curso mixto: crypto bajo categoria economics y fuente generica; cubierto por Binance PL y NBP.",
+    "lessons": [
+      {
+        "lesson_id": 18,
+        "lesson_order": 1,
+        "lesson_name": "Bezpieczeństwo i ryzyko w krypto",
+        "content_type": "article",
+        "content_url": "https://inwestomat.eu/",
+        "current_active": false,
+        "recommended_active": false,
+        "review_notes": "Mantener inactiva salvo reutilizacion curada en una ruta nueva.",
+        "image_url": "/learning/lesson-covers/pl-06-9-01-bezpiecze-stwo-i-ryzyko-w-krypto.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      },
+      {
+        "lesson_id": 19,
+        "lesson_order": 2,
+        "lesson_name": "Inflacja i stopy procentowe",
+        "content_type": "article",
+        "content_url": "https://www.nbp.pl/",
+        "current_active": false,
+        "recommended_active": false,
+        "review_notes": "Mantener inactiva salvo reutilizacion curada en una ruta nueva.",
+        "image_url": "/learning/lesson-covers/pl-06-9-02-inflacja-i-stopy-procentowe.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 22,
+    "course_order": 7,
+    "course_name": "NBP Edukacja",
+    "language": "pl",
+    "category": "economics",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/pl-07-nbp-edukacja.svg",
+    "cover_image_url": "/learning/course-covers/pl-07-nbp-edukacja.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Fuente fiable y complementaria para el Learning Centre.",
+    "lessons": [
+      {
+        "lesson_id": 32,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "article",
+        "content_url": "https://nbp.pl/edukacja/",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/pl-07-22-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 23,
+    "course_order": 8,
+    "course_name": "NBP Otwarte zasoby edukacyjne",
+    "language": "pl",
+    "category": "economics",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/pl-08-nbp-otwarte-zasoby-edukacyjne.svg",
+    "cover_image_url": "/learning/course-covers/pl-08-nbp-otwarte-zasoby-edukacyjne.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Fuente fiable y complementaria para el Learning Centre.",
+    "lessons": [
+      {
+        "lesson_id": 33,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "tool",
+        "content_url": "https://nbp.pl/edukacja/zasoby-edukacyjne/",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/pl-08-23-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 25,
+    "course_order": 9,
+    "course_name": "GPW Szkola Gieldowa",
+    "language": "pl",
+    "category": "investing",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/pl-09-gpw-szkola-gieldowa.svg",
+    "cover_image_url": "/learning/course-covers/pl-09-gpw-szkola-gieldowa.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Fuente fiable y complementaria para el Learning Centre.",
+    "lessons": [
+      {
+        "lesson_id": 35,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "course",
+        "content_url": "https://www.gpw.pl/szkola-gieldowa",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/pl-09-25-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 26,
+    "course_order": 10,
+    "course_name": "GPW Kurs na gielde",
+    "language": "pl",
+    "category": "investing",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/pl-10-gpw-kurs-na-gielde.svg",
+    "cover_image_url": "/learning/course-covers/pl-10-gpw-kurs-na-gielde.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Fuente fiable y complementaria para el Learning Centre.",
+    "lessons": [
+      {
+        "lesson_id": 36,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "course",
+        "content_url": "https://www.gpw.pl/fundacja-gpw-platforma-edukacyjna",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/pl-10-26-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 8,
+    "course_order": 11,
+    "course_name": "Inwestowanie i ETF-y",
+    "language": "pl",
+    "category": "investing",
+    "level": "intermediate",
+    "thumbnail_url": "/learning/course-covers/pl-11-inwestowanie-i-etf-y.svg",
+    "cover_image_url": "/learning/course-covers/pl-11-inwestowanie-i-etf-y.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active_add_disclaimer",
+    "review_notes": "Intermedio PL: colocar despues de fundamentos personales, consumidores, economia y GPW basico.",
+    "lessons": [
+      {
+        "lesson_id": 16,
+        "lesson_order": 1,
+        "lesson_name": "ETF-y i inwestowanie pasywne",
+        "content_type": "article",
+        "content_url": "https://inwestomat.eu/",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "Conviene anadir disclaimer educativo.",
+        "image_url": "/learning/lesson-covers/pl-11-8-01-etf-y-i-inwestowanie-pasywne.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      },
+      {
+        "lesson_id": 17,
+        "lesson_order": 2,
+        "lesson_name": "Inwestomat Podcast",
+        "content_type": "audio",
+        "content_url": "https://inwestomat.eu/podcast/",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "Conviene anadir disclaimer educativo.",
+        "image_url": "/learning/lesson-covers/pl-11-8-02-inwestomat-podcast.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 27,
+    "course_order": 12,
+    "course_name": "Fundacja GPW Filmy edukacyjne",
+    "language": "pl",
+    "category": "investing",
+    "level": "intermediate",
+    "thumbnail_url": "/learning/course-covers/pl-12-fundacja-gpw-filmy-edukacyjne.svg",
+    "cover_image_url": "/learning/course-covers/pl-12-fundacja-gpw-filmy-edukacyjne.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Fuente fiable y complementaria para el Learning Centre.",
+    "lessons": [
+      {
+        "lesson_id": 37,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "video",
+        "content_url": "https://kursnagielde.pl/filmy-edukacyjne/",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/pl-12-27-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 30,
+    "course_order": 13,
+    "course_name": "KNF Seminaria CEDUR",
+    "language": "pl",
+    "category": "economics",
+    "level": "intermediate",
+    "thumbnail_url": "/learning/course-covers/pl-13-knf-seminaria-cedur.svg",
+    "cover_image_url": "/learning/course-covers/pl-13-knf-seminaria-cedur.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Fuente fiable y complementaria para el Learning Centre.",
+    "lessons": [
+      {
+        "lesson_id": 40,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "course",
+        "content_url": "https://www.knf.gov.pl/co_robimy/edukacja_finansowa/seminaria_cedur",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/pl-13-30-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 32,
+    "course_order": 14,
+    "course_name": "Obserwator Finansowy",
+    "language": "pl",
+    "category": "economics",
+    "level": "intermediate",
+    "thumbnail_url": "/learning/course-covers/pl-14-obserwator-finansowy.svg",
+    "cover_image_url": "/learning/course-covers/pl-14-obserwator-finansowy.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Fuente educativa/analitica util; revisar nivel para beginners.",
+    "lessons": [
+      {
+        "lesson_id": 42,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "article",
+        "content_url": "https://www.obserwatorfinansowy.pl/",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/pl-14-32-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 24,
+    "course_order": 15,
+    "course_name": "Narodowy Bank Polski YouTube",
+    "language": "pl",
+    "category": "economics",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/pl-15-narodowy-bank-polski-youtube.svg",
+    "cover_image_url": "/learning/course-covers/pl-15-narodowy-bank-polski-youtube.svg",
+    "current_active": false,
+    "recommended_active": false,
+    "recommended_action": "inactive_channel_link",
+    "review_notes": "Fuente institucional buena, pero el enlace apunta a canal; activar solo cuando tenga video/playlist especifica.",
+    "lessons": [
+      {
+        "lesson_id": 34,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "video",
+        "content_url": "https://www.youtube.com/@NBPpl",
+        "current_active": false,
+        "recommended_active": false,
+        "review_notes": "Enlace a canal; sustituir por video/playlist especifica antes de activar. Mantener inactiva salvo reutilizacion curada en una ruta nueva.",
+        "image_url": "/learning/lesson-covers/pl-15-24-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 33,
+    "course_order": 15,
+    "course_name": "Obserwator Finansowy Podcast",
+    "language": "pl",
+    "category": "economics",
+    "level": "intermediate",
+    "thumbnail_url": "/learning/course-covers/pl-15-obserwator-finansowy-podcast.svg",
+    "cover_image_url": "/learning/course-covers/pl-15-obserwator-finansowy-podcast.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active",
+    "review_notes": "Fuente educativa/analitica util; revisar nivel para beginners.",
+    "lessons": [
+      {
+        "lesson_id": 43,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "podcast",
+        "content_url": "https://open.spotify.com/show/2nXC3fQO7P09vD1gUkqSYe",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/pl-15-33-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 35,
+    "course_order": 16,
+    "course_name": "Binance Academy PL Start Here",
+    "language": "pl",
+    "category": "crypto",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/pl-16-binance-academy-pl-start-here.svg",
+    "cover_image_url": "/learning/course-covers/pl-16-binance-academy-pl-start-here.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active_commercial_review",
+    "review_notes": "Crypto beginner PL, ubicado al final de la ruta base por riesgo tematico.",
+    "lessons": [
+      {
+        "lesson_id": 45,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "course",
+        "content_url": "https://www.binance.com/pl/academy/start-here",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/pl-16-35-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 36,
+    "course_order": 17,
+    "course_name": "Binance Academy PL Beginner Track",
+    "language": "pl",
+    "category": "crypto",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/pl-17-binance-academy-pl-beginner-track.svg",
+    "cover_image_url": "/learning/course-covers/pl-17-binance-academy-pl-beginner-track.svg",
+    "current_active": true,
+    "recommended_active": true,
+    "recommended_action": "keep_active_commercial_review",
+    "review_notes": "Curso crypto PL estructurado, despues del start here.",
+    "lessons": [
+      {
+        "lesson_id": 46,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "course",
+        "content_url": "https://www.binance.com/pl/academy/track/beginner-track",
+        "current_active": true,
+        "recommended_active": true,
+        "review_notes": "OK para catalogo.",
+        "image_url": "/learning/lesson-covers/pl-17-36-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 34,
+    "course_order": 25,
+    "course_name": "Binance Academy PL",
+    "language": "pl",
+    "category": "crypto",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/pl-25-binance-academy-pl.svg",
+    "cover_image_url": "/learning/course-covers/pl-25-binance-academy-pl.svg",
+    "current_active": false,
+    "recommended_active": false,
+    "recommended_action": "inactive_generic_duplicate",
+    "review_notes": "Pagina general solapada con Start Here y Beginner Track; mantener inactiva.",
+    "lessons": [
+      {
+        "lesson_id": 44,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "article",
+        "content_url": "https://www.binance.com/pl/academy",
+        "current_active": false,
+        "recommended_active": false,
+        "review_notes": "Mantener inactiva salvo reutilizacion curada en una ruta nueva.",
+        "image_url": "/learning/lesson-covers/pl-25-34-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 38,
+    "course_order": 29,
+    "course_name": "Marcin Iwuc YouTube",
+    "language": "pl",
+    "category": "personal-finance",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/pl-29-marcin-iwuc-youtube.svg",
+    "cover_image_url": "/learning/course-covers/pl-29-marcin-iwuc-youtube.svg",
+    "current_active": false,
+    "recommended_active": false,
+    "recommended_action": "inactive_channel_link",
+    "review_notes": "Fuente relevante, pero enlace a canal; activar solo con video/playlist especifica.",
+    "lessons": [
+      {
+        "lesson_id": 48,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "video",
+        "content_url": "https://www.youtube.com/channel/UCe8VykA_qDCBmg_08eIA8iQ",
+        "current_active": false,
+        "recommended_active": false,
+        "review_notes": "Enlace a canal; sustituir por video/playlist especifica antes de activar. Mantener inactiva salvo reutilizacion curada en una ruta nueva.",
+        "image_url": "/learning/lesson-covers/pl-29-38-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 40,
+    "course_order": 31,
+    "course_name": "WNOP Wiecej niz oszczedzanie pieniedzy",
+    "language": "pl",
+    "category": "personal-finance",
+    "level": "beginner",
+    "thumbnail_url": "/learning/course-covers/pl-31-wnop-wiecej-niz-oszczedzanie-pieniedzy.svg",
+    "cover_image_url": "/learning/course-covers/pl-31-wnop-wiecej-niz-oszczedzanie-pieniedzy.svg",
+    "current_active": false,
+    "recommended_active": false,
+    "recommended_action": "inactive_feed_url",
+    "review_notes": "Podcast relevante, pero el enlace actual es feed RSS crudo; activar con pagina publica o episodio.",
+    "lessons": [
+      {
+        "lesson_id": 50,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "podcast",
+        "content_url": "https://jakoszczedzacpieniadze.pl/feed/podcast",
+        "current_active": false,
+        "recommended_active": false,
+        "review_notes": "Es un feed RSS; sustituir por pagina publica o episodio reproducible antes de activar. Mantener inactiva salvo reutilizacion curada en una ruta nueva.",
+        "image_url": "/learning/lesson-covers/pl-31-40-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  },
+  {
+    "course_id": 41,
+    "course_order": 32,
+    "course_name": "Forex Club PL YouTube",
+    "language": "pl",
+    "category": "forex",
+    "level": "intermediate",
+    "thumbnail_url": "/learning/course-covers/pl-32-forex-club-pl-youtube.svg",
+    "cover_image_url": "/learning/course-covers/pl-32-forex-club-pl-youtube.svg",
+    "current_active": false,
+    "recommended_active": false,
+    "recommended_action": "inactive_trading_risk",
+    "review_notes": "Trading/Forex orientado a mercados; mantener inactivo hasta curar videos estrictamente educativos con disclaimer fuerte.",
+    "lessons": [
+      {
+        "lesson_id": 51,
+        "lesson_order": 1,
+        "lesson_name": "Zacznij tutaj",
+        "content_type": "video",
+        "content_url": "https://www.youtube.com/user/forexclubpl",
+        "current_active": false,
+        "recommended_active": false,
+        "review_notes": "Enlace a canal; sustituir por video/playlist especifica antes de activar. Mantener inactiva salvo reutilizacion curada en una ruta nueva.",
+        "image_url": "/learning/lesson-covers/pl-32-41-01-zacznij-tutaj.svg",
+        "youtube_video_id": "",
+        "visual_source": "generated_cover"
+      }
+    ]
+  }
+]

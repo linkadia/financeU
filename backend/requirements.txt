@@ -4,3 +4,8 @@ django-cors-headers
 python-dotenv
 django-redis
 whitenoise
+rss-parser
+requests
+beautifulsoup4
+langchain
+langchain-google-genai

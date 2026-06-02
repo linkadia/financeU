@@ -1,11 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { getLearningCatalog, getLearningProgress, submitLessonExam } from "../api/learning";
 import TopBar from "../components/layout/TopBar";
 import BottomNav from "../components/layout/BottomNav";
 import GlassCard from "../components/ui/GlassCard";
-import { getCourseTypes, getCourses, getLearningCategories, getLearningLevels } from "../data/localizedCourses";
+import { getCourses as getLocalCourses } from "../data/localizedCourses";
 import { useI18n } from "../i18n/I18nContext";
+import { getCurrentUser } from "../utils/session";
 
-const STORAGE_KEY = "finan3_learning_progress";
+const STORAGE_KEY = "finanu_learning_progress";
 
 function loadProgress() {
   try {
@@ -15,9 +18,13 @@ function loadProgress() {
   }
 }
 
+function getProgressEntry(progress, lessonId) {
+  return progress[lessonId] || progress[String(lessonId)] || {};
+}
+
 function getCourseProgress(course, progress) {
   const activeLessons = course.lessons.filter((lesson) => lesson.is_active);
-  const completed = activeLessons.filter((lesson) => progress[lesson.id]?.status === "completed").length;
+  const completed = activeLessons.filter((lesson) => getProgressEntry(progress, lesson.id).status === "completed").length;
   const total = activeLessons.length;
 
   return {
@@ -27,23 +34,29 @@ function getCourseProgress(course, progress) {
   };
 }
 
-function FilterChip({ active, children, onClick }) {
-  return (
-    <button
-      className={`shrink-0 rounded-lg border px-3 py-2 text-label-sm transition-all active:scale-95 ${
-        active
-          ? "border-primary bg-primary text-on-primary"
-          : "border-white/10 bg-surface-container text-on-surface-variant"
-      }`}
-      onClick={onClick}
-      type="button"
-    >
-      {children}
-    </button>
-  );
+function getFirstIncompleteLesson(course, progress) {
+  return course.lessons.find((lesson) => lesson.is_active && getProgressEntry(progress, lesson.id).status !== "completed");
 }
 
-function LessonStatusIcon({ completed, active }) {
+function getContentIcon(contentType) {
+  if (contentType === "audio") return "headphones";
+  if (contentType === "article") return "article";
+  if (contentType === "course") return "school";
+  return "smart_display";
+}
+
+function getProviderTone(contentType) {
+  if (contentType === "audio") return "bg-primary/15 text-primary";
+  if (contentType === "article") return "bg-secondary/10 text-secondary";
+  if (contentType === "course") return "bg-tertiary/15 text-tertiary";
+  return "bg-red-500/15 text-red-200";
+}
+
+function LessonStatusIcon({ completed, active, locked }) {
+  if (locked) {
+    return <span className="material-symbols-outlined text-on-surface-variant">lock</span>;
+  }
+
   if (completed) {
     return (
       <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -59,94 +72,329 @@ function LessonStatusIcon({ completed, active }) {
   );
 }
 
+function LessonMedia({ lesson, language, t }) {
+  if (lesson.content_type === "video" && lesson.youtube_video_id) {
+    return (
+      <div className="aspect-video bg-black">
+        <iframe
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          className="h-full w-full"
+          referrerPolicy="strict-origin-when-cross-origin"
+          src={`https://www.youtube.com/embed/${lesson.youtube_video_id}?rel=0&modestbranding=0`}
+          title={`${lesson.title} on YouTube`}
+        />
+      </div>
+    );
+  }
+
+  if (lesson.embed_url) {
+    return (
+      <div className="aspect-video bg-black">
+        <iframe
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          className="h-full w-full"
+          loading="lazy"
+          src={lesson.embed_url}
+          title={lesson.title}
+        />
+      </div>
+    );
+  }
+
+  if (lesson.image_url) {
+    return (
+      <div className="aspect-video bg-surface-container-high">
+        <img alt="" className="h-full w-full object-cover" src={lesson.image_url} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex aspect-video items-center justify-center bg-surface-container-high">
+      <span className="material-symbols-outlined text-[56px] text-primary">
+        {getContentIcon(lesson.content_type)}
+      </span>
+      <span className="sr-only">{t("learn.contentLanguage")}: {(lesson.content_language || language).toUpperCase()}</span>
+    </div>
+  );
+}
+
 export default function Learn() {
   const { language, t } = useI18n();
-  const courses = useMemo(() => getCourses(language), [language]);
-  const learningCategories = useMemo(() => getLearningCategories(language), [language]);
-  const learningLevels = useMemo(() => getLearningLevels(language), [language]);
-  const courseTypes = useMemo(() => getCourseTypes(language), [language]);
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedLevel, setSelectedLevel] = useState("all");
-  const [selectedType, setSelectedType] = useState("all");
+  const [searchParams] = useSearchParams();
+  const requestedCourseParam = searchParams.get("course");
+  const requestedLessonParam = searchParams.get("lesson");
+  const currentUser = useMemo(() => getCurrentUser(), []);
+  const localCourses = useMemo(() => getLocalCourses(language), [language]);
+  const [courses, setCourses] = useState(localCourses);
   const [progress, setProgress] = useState(loadProgress);
-  const [activeCourseId, setActiveCourseId] = useState(courses[0]?.id);
-  const [activeLessonId, setActiveLessonId] = useState(courses[0]?.lessons[0]?.id);
-  const [selectedOptionId, setSelectedOptionId] = useState(null);
+  const initialCourseId = Number(requestedCourseParam) || courses[0]?.id;
+  const initialCourse = courses.find((course) => course.id === initialCourseId) || courses[0];
+  const [activeCourseId, setActiveCourseId] = useState(initialCourse?.id);
+  const [activeLessonId, setActiveLessonId] = useState(
+    Number(requestedLessonParam) || initialCourse?.lessons[0]?.id
+  );
+  const [selectedOptionIds, setSelectedOptionIds] = useState({});
+  const [examFeedback, setExamFeedback] = useState({});
   const [quizResult, setQuizResult] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setCourses(localCourses);
+
+    getLearningCatalog(language)
+      .then((catalog) => {
+        if (!cancelled && Array.isArray(catalog) && catalog.length > 0) {
+          setCourses(catalog);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCourses(localCourses);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [language, localCourses]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
   }, [progress]);
 
-  const filteredCourses = useMemo(() => {
-    return courses.filter((course) => {
-      return (
-        course.is_active &&
-        (selectedCategory === "all" || course.category.slug === selectedCategory) &&
-        (selectedLevel === "all" || course.level.slug === selectedLevel) &&
-        (selectedType === "all" || course.course_type.slug === selectedType)
-      );
-    });
-  }, [selectedCategory, selectedLevel, selectedType]);
+  useEffect(() => {
+    if (!currentUser?.id) return;
 
-  const activeCourse = courses.find((course) => course.id === activeCourseId) || filteredCourses[0] || courses[0];
+    let cancelled = false;
+    getLearningProgress(currentUser.id)
+      .then((data) => {
+        if (!cancelled && data?.lessons) {
+          setProgress(data.lessons);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser?.id, courses]);
+
+  useEffect(() => {
+    const courseId = Number(requestedCourseParam);
+    const lessonId = Number(requestedLessonParam);
+
+    if (!courseId && !lessonId) return;
+
+    const requestedCourse = courses.find((course) => course.id === courseId);
+    const requestedLesson = requestedCourse?.lessons.find((lesson) => lesson.id === lessonId);
+
+    if (requestedCourse) {
+      setActiveCourseId(requestedCourse.id);
+    }
+
+    if (requestedLesson) {
+      setActiveLessonId(requestedLesson.id);
+    }
+
+    setSelectedOptionIds({});
+    setExamFeedback({});
+    setQuizResult(null);
+  }, [courses, requestedCourseParam, requestedLessonParam]);
+
+  const activeCourses = useMemo(() => courses.filter((course) => course.is_active), [courses]);
+
+  const courseStates = useMemo(() => {
+    let previousCompleted = true;
+
+    return activeCourses.map((course, index) => {
+      const courseProgress = getCourseProgress(course, progress);
+      const completed = courseProgress.total > 0 && courseProgress.completed === courseProgress.total;
+      const unlocked = previousCompleted;
+      const current = unlocked && !completed;
+      const firstIncompleteLesson = getFirstIncompleteLesson(course, progress);
+      previousCompleted = previousCompleted && completed;
+
+      return {
+        course,
+        courseProgress,
+        completed,
+        current,
+        firstIncompleteLesson,
+        index,
+        unlocked,
+      };
+    });
+  }, [activeCourses, progress]);
+
+  const pathCompleted = courseStates.length > 0 && courseStates.every((state) => state.completed);
+  const currentCourseState = courseStates.find((state) => state.current) || courseStates[courseStates.length - 1];
+  const activeCourseState =
+    courseStates.find((state) => state.course.id === activeCourseId) || currentCourseState;
+  const activeCourse = activeCourseState?.course || activeCourses[0];
   const activeLesson =
-    activeCourse?.lessons.find((lesson) => lesson.id === activeLessonId) || activeCourse?.lessons[0];
+    activeLessonId ? activeCourse?.lessons.find((lesson) => lesson.id === activeLessonId) : null;
 
   const globalProgress = useMemo(() => {
     const allLessons = courses.flatMap((course) =>
       course.is_active ? course.lessons.filter((lesson) => lesson.is_active) : []
     );
-    const completed = allLessons.filter((lesson) => progress[lesson.id]?.status === "completed").length;
+    const completed = allLessons.filter((lesson) => getProgressEntry(progress, lesson.id).status === "completed").length;
 
     return {
       completed,
       total: allLessons.length,
       percentage: allLessons.length ? Math.round((completed / allLessons.length) * 100) : 0
     };
-  }, [progress]);
+  }, [courses, progress]);
 
-  const activeCourseProgress = activeCourse ? getCourseProgress(activeCourse, progress) : null;
-  const activeLessonProgress = activeLesson ? progress[activeLesson.id] : null;
+  const activeCourseProgress = activeCourseState?.courseProgress || (activeCourse ? getCourseProgress(activeCourse, progress) : null);
+  const activeLessonProgress = activeLesson ? getProgressEntry(progress, activeLesson.id) : null;
   const isCompleted = activeLessonProgress?.status === "completed";
+  const activeExamQuestions = activeLesson?.quiz?.questions || (activeLesson?.quiz ? [activeLesson.quiz] : []);
+  const answeredQuestions = activeExamQuestions.filter((question) => selectedOptionIds[question.id]).length;
+  const hasAnsweredExam = activeExamQuestions.length > 0 && answeredQuestions === activeExamQuestions.length;
+
+  const isLessonSequentiallyUnlocked = (course, lesson) => {
+    const lessonIndex = course.lessons.findIndex((courseLesson) => courseLesson.id === lesson.id);
+    if (lessonIndex <= 0) return true;
+
+    return course.lessons
+      .slice(0, lessonIndex)
+      .every((previousLesson) => getProgressEntry(progress, previousLesson.id).status === "completed");
+  };
+
+  const canAccessLessonContent = (courseState, lesson) =>
+    Boolean(courseState?.unlocked && activeCourse && isLessonSequentiallyUnlocked(activeCourse, lesson));
+
+  const canAccessActiveLessonContent = activeLesson ? canAccessLessonContent(activeCourseState, activeLesson) : false;
 
   const selectCourse = (course) => {
+    const selectedCourseState = courseStates.find((state) => state.course.id === course.id);
+    const nextLesson = selectedCourseState?.unlocked
+      ? selectedCourseState.firstIncompleteLesson || course.lessons[0]
+      : course.lessons[0];
+
     setActiveCourseId(course.id);
-    setActiveLessonId(course.lessons[0]?.id);
-    setSelectedOptionId(null);
+    setActiveLessonId(nextLesson?.id);
+    setSelectedOptionIds({});
+    setExamFeedback({});
     setQuizResult(null);
   };
 
   const selectLesson = (lesson) => {
+    if (!activeCourse) return;
+
+    if (activeLessonId === lesson.id) {
+      setActiveLessonId(null);
+      setSelectedOptionIds({});
+      setExamFeedback({});
+      setQuizResult(null);
+      return;
+    }
+
+    const lessonIsAccessible = canAccessLessonContent(activeCourseState, lesson);
     setActiveLessonId(lesson.id);
-    setSelectedOptionId(null);
+    setSelectedOptionIds({});
+    setExamFeedback({});
     setQuizResult(null);
+
+    if (!lessonIsAccessible) return;
+
     setProgress((current) => ({
       ...current,
       [lesson.id]: {
-        status: current[lesson.id]?.status === "completed" ? "completed" : "in_progress",
-        attempts: current[lesson.id]?.attempts || 0,
-        selected_option: current[lesson.id]?.selected_option || null
+        status: getProgressEntry(current, lesson.id).status === "completed" ? "completed" : "in_progress",
+        attempts: getProgressEntry(current, lesson.id).attempts || 0,
+        selected_options: getProgressEntry(current, lesson.id).selected_options || {},
+        quiz_answered_correctly: getProgressEntry(current, lesson.id).quiz_answered_correctly || false
       }
     }));
   };
 
-  const submitAnswer = () => {
-    const selectedOption = activeLesson.quiz.options.find((option) => option.id === selectedOptionId);
-    if (!selectedOption) return;
+  const goToNextStep = () => {
+    if (!activeCourse || !activeLesson) return;
 
-    const currentProgress = progress[activeLesson.id] || { attempts: 0 };
-    const attempts = currentProgress.attempts + 1;
+    const lessonIndex = activeCourse.lessons.findIndex((lesson) => lesson.id === activeLesson.id);
+    const nextLesson = activeCourse.lessons[lessonIndex + 1];
 
-    if (!selectedOption.is_correct) {
+    if (nextLesson) {
+      selectLesson(nextLesson);
+      return;
+    }
+
+    const courseIndex = courseStates.findIndex((state) => state.course.id === activeCourse.id);
+    const nextCourseState = courseStates[courseIndex + 1];
+
+    if (nextCourseState) {
+      setActiveCourseId(nextCourseState.course.id);
+      setActiveLessonId(nextCourseState.firstIncompleteLesson?.id || nextCourseState.course.lessons[0]?.id);
+      setSelectedOptionIds({});
+      setExamFeedback({});
+      setQuizResult(null);
+    }
+  };
+
+  const submitAnswer = async () => {
+    if (!canAccessActiveLessonContent) return;
+
+    const selectedOptions = activeExamQuestions.map((question) =>
+      question.options.find((option) => option.id === selectedOptionIds[question.id])
+    );
+    if (selectedOptions.some((option) => !option)) return;
+
+    if (currentUser?.id) {
+      try {
+        const result = await submitLessonExam({
+          lessonId: activeLesson.id,
+          userId: currentUser.id,
+          answers: selectedOptionIds,
+        });
+
+        setExamFeedback(result.feedback || {});
+        setQuizResult(result.quiz_answered_correctly ? "correct" : "wrong");
+        setProgress((current) => ({
+          ...current,
+          [activeLesson.id]: {
+            status: result.status,
+            attempts: result.attempts,
+            selected_options: result.selected_options,
+            quiz_answered_correctly: result.quiz_answered_correctly,
+            completed_at: result.completed_at,
+          }
+        }));
+        return;
+      } catch {
+        // Fall through to the local validator only when the bundled fallback data includes answers.
+      }
+    }
+
+    const currentProgress = getProgressEntry(progress, activeLesson.id);
+    const attempts = (currentProgress.attempts || 0) + 1;
+    const allCorrect = selectedOptions.every((option) => option.is_correct);
+    const nextFeedback = activeExamQuestions.reduce((feedback, question, index) => {
+      const selectedOption = selectedOptions[index];
+      return {
+        ...feedback,
+        [question.id]: {
+          correct: selectedOption?.is_correct || false,
+          selectedText: selectedOption?.text || "",
+        }
+      };
+    }, {});
+
+    setExamFeedback(nextFeedback);
+
+    if (!allCorrect) {
       setQuizResult("wrong");
       setProgress((current) => ({
         ...current,
         [activeLesson.id]: {
-          ...current[activeLesson.id],
+          ...getProgressEntry(current, activeLesson.id),
           status: "in_progress",
           attempts,
-          selected_option: selectedOption.id,
+          selected_options: selectedOptionIds,
           quiz_answered_correctly: false
         }
       }));
@@ -159,7 +407,7 @@ export default function Learn() {
       [activeLesson.id]: {
         status: "completed",
         attempts,
-        selected_option: selectedOption.id,
+        selected_options: selectedOptionIds,
         quiz_answered_correctly: true,
         completed_at: new Date().toISOString()
       }
@@ -174,22 +422,22 @@ export default function Learn() {
         <section className="px-container-padding pb-stack-md pt-stack-lg">
           <div className="mb-stack-md flex items-end justify-between gap-stack-md">
             <div>
-              <p className="mb-1 text-label-sm uppercase text-primary">{t('learn.learning')}</p>
+              <p className="mb-1 text-label-sm uppercase text-primary">{t("learn.learning")}</p>
               <h1 className="font-headline-lg-mobile text-headline-lg-mobile tracking-normal">
-                {t('learn.financeLessons')}
+                {t("learn.financeLessons")}
               </h1>
             </div>
             <div className="text-right">
               <p className="font-mono-data text-[22px] text-secondary">{globalProgress.percentage}%</p>
               <p className="text-label-sm text-on-surface-variant">
-                {globalProgress.completed}/{globalProgress.total} {t('learn.done')}
+                {globalProgress.completed}/{globalProgress.total} {t("learn.done")}
               </p>
             </div>
           </div>
 
           <GlassCard className="p-stack-md">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-label-sm text-on-surface-variant">{t('learn.globalProgress')}</span>
+              <span className="text-label-sm text-on-surface-variant">{t("learn.globalProgress")}</span>
               <span className="font-mono-data text-label-sm">{globalProgress.percentage}%</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-white/5">
@@ -198,164 +446,293 @@ export default function Learn() {
           </GlassCard>
         </section>
 
-        <section className="space-y-stack-sm px-container-padding pb-stack-md">
-          <div className="flex gap-gutter overflow-x-auto pb-1 hide-scrollbar">
-            <FilterChip active={selectedCategory === "all"} onClick={() => setSelectedCategory("all")}>
-              {t('learn.allTopics')}
-            </FilterChip>
-            {learningCategories.map((category) => (
-              <FilterChip
-                active={selectedCategory === category.slug}
-                key={category.id}
-                onClick={() => setSelectedCategory(category.slug)}
-              >
-                {category.name}
-              </FilterChip>
-            ))}
+        <section className="px-container-padding pb-stack-lg">
+          <div className="mb-stack-md flex items-center justify-between">
+            <h2 className="font-title-md text-title-md">{t("learn.courseMap")}</h2>
+            <span className="text-label-sm text-on-surface-variant">{courseStates.length} {t("learn.courses")}</span>
           </div>
-          <div className="flex gap-gutter overflow-x-auto pb-1 hide-scrollbar">
-            <FilterChip active={selectedLevel === "all"} onClick={() => setSelectedLevel("all")}>
-              {t('learn.allLevels')}
-            </FilterChip>
-            {learningLevels.map((level) => (
-              <FilterChip
-                active={selectedLevel === level.slug}
-                key={level.id}
-                onClick={() => setSelectedLevel(level.slug)}
-              >
-                {level.name}
-              </FilterChip>
-            ))}
-          </div>
-          <div className="flex gap-gutter overflow-x-auto pb-1 hide-scrollbar">
-            <FilterChip active={selectedType === "all"} onClick={() => setSelectedType("all")}>
-              {t('learn.allFormats')}
-            </FilterChip>
-            {courseTypes.map((type) => (
-              <FilterChip
-                active={selectedType === type.slug}
-                key={type.id}
-                onClick={() => setSelectedType(type.slug)}
-              >
-                {type.name}
-              </FilterChip>
-            ))}
-          </div>
+
+          <GlassCard className="overflow-hidden p-stack-md">
+            <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+              {courseStates.map((state, index) => {
+                const isActive = state.course.id === activeCourse?.id;
+                const statusLabel = state.completed
+                  ? t("learn.completed")
+                  : state.current
+                    ? t("learn.inProgress")
+                    : t("learn.locked");
+
+                return (
+                  <div className="flex min-w-[92px] items-start" key={state.course.id}>
+                    <button
+                      className="group flex w-full flex-col items-center gap-2 text-center"
+                      onClick={() => selectCourse(state.course)}
+                      type="button"
+                    >
+                      <span
+                        className={`flex h-14 w-14 items-center justify-center rounded-full border text-[13px] font-label-md transition-all active:scale-[0.96] ${isActive
+                          ? "border-primary bg-primary text-on-primary shadow-lg shadow-primary/20"
+                          : state.completed
+                            ? "border-secondary/60 bg-secondary/15 text-secondary"
+                            : state.unlocked
+                              ? "border-primary/50 bg-primary/10 text-primary"
+                              : "border-white/10 bg-surface-container-high text-on-surface-variant"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[22px]">
+                          {state.completed ? "check" : state.unlocked ? "play_arrow" : "lock"}
+                        </span>
+                      </span>
+                      <span className="line-clamp-3 min-h-[42px] text-label-sm leading-tight text-on-surface">
+                        {index + 1}. {state.course.title}
+                      </span>
+                      <span className="text-[10px] uppercase text-on-surface-variant">{statusLabel}</span>
+                    </button>
+                    {index < courseStates.length - 1 && (
+                      <div className={`mt-7 h-px w-8 shrink-0 ${state.completed ? "bg-secondary" : "bg-white/10"}`} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </GlassCard>
         </section>
 
-        <section className="mb-stack-lg">
-          <div className="mb-stack-md flex items-center justify-between px-container-padding">
-            <h2 className="font-title-md text-title-md">{t('learn.courses')}</h2>
-            <span className="text-label-sm text-on-surface-variant">{filteredCourses.length} {t('learn.available')}</span>
-          </div>
-          <div className="flex gap-gutter overflow-x-auto px-container-padding pb-1 hide-scrollbar">
-            {filteredCourses.map((course) => {
-              const courseProgress = getCourseProgress(course, progress);
-              const isActive = course.id === activeCourse?.id;
-
-              return (
-                <button
-                  className={`min-w-[236px] overflow-hidden rounded-xl border bg-surface-container text-left transition-all active:scale-[0.98] ${
-                    isActive ? "border-primary" : "border-white/10"
-                  }`}
-                  key={course.id}
-                  onClick={() => selectCourse(course)}
-                  type="button"
-                >
-                  <div className="relative aspect-video bg-surface-container-high">
-                    <img alt="" className="h-full w-full object-cover" src={course.thumbnail_url} />
-                    <div className="absolute left-2 top-2 flex items-center gap-1 rounded-lg bg-black/70 px-2 py-1">
-                      <span className="material-symbols-outlined text-[16px] text-red-500">smart_display</span>
-                      <span className="text-[10px] font-label-sm text-white">YouTube</span>
-                    </div>
-                    <div className="absolute bottom-2 right-2 rounded-lg bg-black/70 px-2 py-1 text-[10px] text-white">
-                      {course.estimated_duration_minutes} min
-                    </div>
-                  </div>
-                  <div className="p-stack-md">
-                    <p className="mb-1 text-[10px] font-label-sm uppercase text-primary">
-                      {course.category.name} / {course.level.name}
-                    </p>
-                    <h3 className="mb-1 font-title-md text-[17px] leading-6">{course.title}</h3>
-                    <p className="mb-3 text-label-sm text-on-surface-variant">{course.description}</p>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
-                      <div className="h-full rounded-full bg-secondary" style={{ width: `${courseProgress.percentage}%` }} />
-                    </div>
-                    <p className="mt-2 text-[10px] text-on-surface-variant">
-                      {courseProgress.completed}/{courseProgress.total} {t('learn.lessonsCompleted')}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        {activeCourse && activeLesson && (
-          <>
-            <section className="px-container-padding pb-stack-lg">
-              <GlassCard className="overflow-hidden">
-                <div className="aspect-video bg-black">
-                  <iframe
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                    className="h-full w-full"
-                    referrerPolicy="strict-origin-when-cross-origin"
-                    src={`https://www.youtube.com/embed/${activeLesson.youtube_video_id}?rel=0&modestbranding=0`}
-                    title={`${activeLesson.title} on YouTube`}
+        {activeCourseState && (
+          <section className="px-container-padding pb-stack-lg">
+            <GlassCard className="overflow-hidden">
+              <div className="relative aspect-[16/9] bg-surface-container-high">
+                <img alt="" className="h-full w-full object-cover" src={activeCourseState.course.thumbnail_url} />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-stack-md">
+                  <p className="mb-1 text-label-sm uppercase text-secondary">
+                    {activeCourseState.unlocked ? t("learn.learningPath") : t("learn.previewOnly")}
+                  </p>
+                  <h2 className="font-title-md text-title-md text-white">{activeCourseState.course.title}</h2>
+                </div>
+              </div>
+              <div className="p-stack-md">
+                <div className="mb-stack-sm flex items-center justify-between gap-stack-md">
+                  <span className="rounded-lg bg-primary/15 px-2 py-1 text-[10px] font-label-sm uppercase text-primary">
+                    {activeCourseState.course.category.name}
+                  </span>
+                  <span className="text-label-sm text-on-surface-variant">
+                    {activeCourseState.courseProgress.completed}/{activeCourseState.courseProgress.total} {t("learn.lessonsCompleted")}
+                  </span>
+                </div>
+                <p className="text-body-md text-on-surface-variant">{activeCourseState.course.description}</p>
+                <div className="mt-stack-md h-2 overflow-hidden rounded-full bg-white/5">
+                  <div
+                    className="h-full rounded-full bg-secondary"
+                    style={{ width: `${activeCourseState.courseProgress.percentage}%` }}
                   />
                 </div>
-
-                <div className="p-stack-md">
-                  <div className="mb-stack-sm flex items-center justify-between gap-stack-md">
-                    <span className="flex items-center gap-1 rounded-lg bg-red-500/15 px-2 py-1 text-[10px] font-label-sm text-red-200">
-                      <span className="material-symbols-outlined text-[16px]">smart_display</span>
-                      {t('learn.embeddedFromYoutube')}
-                    </span>
-                    <a
-                      className="text-label-sm text-primary"
-                      href={activeLesson.youtube_url}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      {t('learn.open')}
-                    </a>
-                  </div>
-                  <h2 className="font-title-md text-title-md">{activeLesson.title}</h2>
-                  <p className="mt-1 text-body-md text-on-surface-variant">{activeLesson.description}</p>
-                  <p className="mt-3 rounded-lg bg-surface-container-high p-3 text-label-md text-on-surface">
-                    {activeLesson.summary}
+                {!activeCourseState.unlocked && (
+                  <p className="mt-stack-md rounded-lg bg-surface-container-high p-3 text-label-sm text-on-surface-variant">
+                    {t("learn.lockedCourseNote")}
                   </p>
-                </div>
-              </GlassCard>
-            </section>
+                )}
+                {pathCompleted && activeCourseState.completed && (
+                  <p className="mt-stack-md rounded-lg bg-secondary/10 p-3 text-label-sm text-secondary">
+                    {t("learn.pathCompleted")}
+                  </p>
+                )}
+              </div>
+            </GlassCard>
+          </section>
+        )}
 
+        {activeCourse && (
+          <>
             <section className="px-container-padding pb-stack-lg">
-              <h2 className="mb-stack-md font-title-md text-title-md">{t('learn.lessons')}</h2>
+              <div className="mb-stack-md flex items-center justify-between">
+                <h2 className="font-title-md text-title-md">{t("learn.lessons")}</h2>
+                <span className="font-mono-data text-label-sm text-secondary">{activeCourseProgress?.percentage || 0}%</span>
+              </div>
+
               <div className="grid gap-gutter">
                 {activeCourse.lessons.map((lesson) => {
-                  const completed = progress[lesson.id]?.status === "completed";
-                  const active = lesson.id === activeLesson.id;
+                  const lessonProgress = getProgressEntry(progress, lesson.id);
+                  const completed = lessonProgress.status === "completed";
+                  const active = lesson.id === activeLessonId;
+                  const locked = !canAccessLessonContent(activeCourseState, lesson);
+                  const examQuestions = lesson.quiz?.questions || (lesson.quiz ? [lesson.quiz] : []);
+                  const showQuiz = active && !locked;
 
                   return (
-                    <button
-                      className={`flex items-center gap-stack-md rounded-xl border p-stack-md text-left transition-all active:scale-[0.99] ${
-                        active
-                          ? "border-primary bg-primary/10"
+                    <article
+                      className={`overflow-hidden rounded-xl border transition-all ${active
+                        ? "border-primary bg-primary/10"
+                        : locked
+                          ? "border-white/5 bg-surface-container/50"
                           : "border-white/10 bg-surface-container"
                       }`}
                       key={lesson.id}
-                      onClick={() => selectLesson(lesson)}
-                      type="button"
                     >
-                      <LessonStatusIcon active={active} completed={completed} />
-                      <div className="min-w-0 flex-1">
-                        <p className="font-label-md text-label-md">{lesson.title}</p>
-                        <p className="text-label-sm text-on-surface-variant">
-                          {lesson.duration_minutes} min / {t('learn.quizRequired')}
-                        </p>
-                      </div>
-                    </button>
+                      <button
+                        className="flex w-full items-center gap-stack-md p-stack-md text-left transition-all active:scale-[0.99]"
+                        onClick={() => selectLesson(lesson)}
+                        type="button"
+                      >
+                        <LessonStatusIcon active={active} completed={completed} locked={locked} />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-label-md text-label-md">{lesson.title}</p>
+                          <p className="text-label-sm text-on-surface-variant">
+                            {lesson.duration_minutes} min / {lesson.content_type || "video"} / {completed ? t("learn.completed") : t("learn.quizRequired")}
+                          </p>
+                        </div>
+                        <span className="material-symbols-outlined text-on-surface-variant">
+                          {active ? "expand_less" : "expand_more"}
+                        </span>
+                      </button>
+
+                      {active && (
+                        <div className="border-t border-white/10">
+                          {locked ? (
+                            <div className="p-stack-md">
+                              <p className="text-body-md text-on-surface-variant">{lesson.description}</p>
+                              <p className="mt-3 rounded-lg bg-surface-container-high p-3 text-label-sm text-on-surface-variant">
+                                {activeCourseState?.unlocked ? t("learn.lockedLessonNote") : t("learn.lockedCourseNote")}
+                              </p>
+                            </div>
+                          ) : (
+                            <>
+                              <LessonMedia lesson={lesson} language={language} t={t} />
+                              <div className="p-stack-md">
+                                <div className="mb-stack-sm flex items-center justify-between gap-stack-md">
+                                  <span className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-label-sm ${getProviderTone(lesson.content_type)}`}>
+                                    <span className="material-symbols-outlined text-[16px]">{getContentIcon(lesson.content_type)}</span>
+                                    {lesson.provider || t("learn.learningResource")}
+                                  </span>
+                                  {(lesson.source_url || lesson.youtube_url) && (
+                                    <a
+                                      className="text-label-sm text-primary"
+                                      href={lesson.source_url || lesson.youtube_url}
+                                      rel="noreferrer"
+                                      target="_blank"
+                                    >
+                                      {t("learn.open")}
+                                    </a>
+                                  )}
+                                </div>
+                                <h3 className="font-title-md text-title-md">{lesson.title}</h3>
+                                <p className="mt-1 text-body-md text-on-surface-variant">{lesson.description}</p>
+                                <p className="mt-2 text-label-sm text-on-surface-variant">
+                                  {t("learn.contentLanguage")}: {(lesson.content_language || language).toUpperCase()}
+                                  {lesson.source_channel ? ` / ${lesson.source_channel}` : ""}
+                                </p>
+                                <p className="mt-3 rounded-lg bg-surface-container-high p-3 text-label-md text-on-surface">
+                                  {lesson.summary}
+                                </p>
+                              </div>
+                            </>
+                          )}
+
+                          {showQuiz && (
+                            <div className="border-t border-white/10 p-stack-md">
+                              <div className="mb-stack-md flex items-start justify-between gap-stack-md">
+                                <div>
+                                  <p className="mb-1 text-label-sm uppercase text-secondary">{t("learn.lessonQuiz")}</p>
+                                  <h3 className="font-title-md text-title-md">{t("learn.examForVideo")}</h3>
+                                </div>
+                                {completed && (
+                                  <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>
+                                    verified
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="grid gap-gutter">
+                                {examQuestions.map((question, questionIndex) => (
+                                  <div className="rounded-lg border border-white/10 bg-surface-container p-3" key={question.id}>
+                                    <p className="mb-3 font-label-md text-label-md">
+                                      {questionIndex + 1}. {question.question}
+                                    </p>
+                                    <div className="grid gap-2">
+                                      {question.options.map((option) => {
+                                        const selected = selectedOptionIds[question.id] === option.id;
+
+                                        return (
+                                          <button
+                                            className={`rounded-lg border p-3 text-left text-label-md transition-all ${selected
+                                              ? "border-primary bg-primary/15 text-on-surface"
+                                              : "border-white/10 bg-surface-container-high text-on-surface-variant"
+                                            }`}
+                                            disabled={completed}
+                                            key={option.id}
+                                            onClick={() =>
+                                              setSelectedOptionIds((current) => ({
+                                                ...current,
+                                                [question.id]: option.id
+                                              }))
+                                            }
+                                            type="button"
+                                          >
+                                            {option.text}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                    {examFeedback[question.id] && (
+                                      <div
+                                        className={`mt-3 rounded-lg p-3 text-label-sm ${examFeedback[question.id].correct
+                                          ? "bg-secondary/10 text-secondary"
+                                          : "bg-error-container/30 text-on-error-container"
+                                        }`}
+                                      >
+                                        <div className="flex items-start gap-2">
+                                          <span className="material-symbols-outlined text-[18px]">
+                                            {examFeedback[question.id].correct ? "check_circle" : "cancel"}
+                                          </span>
+                                          <p className="font-label-md">
+                                            {examFeedback[question.id].correct ? t("learn.answerCorrect") : t("learn.answerWrong")}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+
+                              {quizResult && (
+                                <div
+                                  className={`mt-stack-md rounded-lg p-3 text-label-md ${quizResult === "correct"
+                                    ? "bg-secondary/10 text-secondary"
+                                    : "bg-error-container/30 text-on-error-container"
+                                  }`}
+                                >
+                                  {quizResult === "correct"
+                                    ? `${t("learn.correct")} ${examQuestions[0]?.explanation || ""}`
+                                    : t("learn.notQuite")}
+                                </div>
+                              )}
+
+                              <button
+                                className="mt-stack-md flex w-full items-center justify-center gap-2 rounded-lg bg-[#f2ae2e] px-stack-md py-3 font-label-md text-on-primary-container shadow-lg shadow-[rgba(242,174,46,0.16)] transition-all hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                                disabled={completed || !hasAnsweredExam}
+                                onClick={submitAnswer}
+                                type="button"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">
+                                  {completed ? "check_circle" : "quiz"}
+                                </span>
+                                {completed ? t("learn.lessonCompleted") : t("learn.submitAnswer")}
+                              </button>
+
+                              {completed && (
+                                <button
+                                  className="mt-gutter flex w-full items-center justify-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-stack-md py-3 font-label-md text-primary transition-all active:scale-[0.98]"
+                                  onClick={goToNextStep}
+                                  type="button"
+                                >
+                                  <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                                  {t("learn.nextStep")}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </article>
                   );
                 })}
               </div>
@@ -363,82 +740,18 @@ export default function Learn() {
 
             <section className="px-container-padding">
               <GlassCard className="p-stack-md">
-                <div className="mb-stack-md flex items-start justify-between gap-stack-md">
-                  <div>
-                    <p className="mb-1 text-label-sm uppercase text-secondary">{t('learn.lessonQuiz')}</p>
-                    <h2 className="font-title-md text-title-md">{activeLesson.quiz.question}</h2>
-                  </div>
-                  {isCompleted && (
-                    <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      verified
-                    </span>
-                  )}
-                </div>
-
-                <div className="grid gap-gutter">
-                  {activeLesson.quiz.options.map((option) => {
-                    const selected = selectedOptionId === option.id;
-
-                    return (
-                      <button
-                        className={`rounded-lg border p-3 text-left text-label-md transition-all ${
-                          selected
-                            ? "border-primary bg-primary/15 text-on-surface"
-                            : "border-white/10 bg-surface-container text-on-surface-variant"
-                        }`}
-                        disabled={isCompleted}
-                        key={option.id}
-                        onClick={() => setSelectedOptionId(option.id)}
-                        type="button"
-                      >
-                        {option.text}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {quizResult && (
-                  <div
-                    className={`mt-stack-md rounded-lg p-3 text-label-md ${
-                      quizResult === "correct"
-                        ? "bg-secondary/10 text-secondary"
-                        : "bg-error-container/30 text-on-error-container"
-                    }`}
-                  >
-                    {quizResult === "correct"
-                      ? `${t('learn.correct')} ${activeLesson.quiz.explanation}`
-                      : t('learn.notQuite')}
-                  </div>
-                )}
-
-                <button
-                  className="mt-stack-md flex w-full items-center justify-center gap-2 rounded-lg bg-secondary px-stack-md py-3 font-label-md text-on-secondary transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={isCompleted || !selectedOptionId}
-                  onClick={submitAnswer}
-                  type="button"
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    {isCompleted ? "check_circle" : "quiz"}
-                  </span>
-                  {isCompleted ? t('learn.lessonCompleted') : t('learn.submitAnswer')}
-                </button>
-              </GlassCard>
-            </section>
-
-            <section className="px-container-padding pt-stack-lg">
-              <GlassCard className="p-stack-md">
                 <div className="mb-2 flex items-center justify-between">
                   <span className="font-label-md">{activeCourse.title}</span>
-                  <span className="font-mono-data text-label-sm">{activeCourseProgress.percentage}%</span>
+                  <span className="font-mono-data text-label-sm">{activeCourseProgress?.percentage || 0}%</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-white/5">
                   <div
                     className="h-full rounded-full bg-primary"
-                    style={{ width: `${activeCourseProgress.percentage}%` }}
+                    style={{ width: `${activeCourseProgress?.percentage || 0}%` }}
                   />
                 </div>
                 <p className="mt-2 text-label-sm text-on-surface-variant">
-                  {t('learn.courseProgressNote')}
+                  {t("learn.courseProgressNote")}
                 </p>
               </GlassCard>
             </section>

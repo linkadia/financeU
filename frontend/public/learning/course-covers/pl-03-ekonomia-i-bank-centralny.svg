@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Ekonomia i bank centralny</title>
+  <desc id="desc">Decorative learning course cover</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1f2937"/>
+      <stop offset="1" stop-color="#0b1020"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="76%" cy="28%" r="60%">
+      <stop offset="0" stop-color="#51e178" stop-opacity=".72"/>
+      <stop offset="1" stop-color="#51e178" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <rect width="1200" height="675" fill="url(#glow)"/>
+  <circle cx="1040" cy="110" r="230" fill="#51e178" opacity=".08"/>
+  <circle cx="135" cy="600" r="280" fill="#ffffff" opacity=".045"/>
+  <path d="M0 500 C180 420 300 610 520 520 S870 360 1200 455 V675 H0 Z" fill="#51e178" opacity=".16"/>
+  
+  <path d="M210 470 C360 250 520 240 650 420 S900 540 1030 220" fill="none" stroke="#51e178" stroke-width="28" stroke-linecap="round"/>
+  <path d="M210 220 C360 440 520 450 650 270 S900 150 1030 470" fill="none" stroke="#dbeafe" stroke-width="20" stroke-linecap="round" opacity=".75"/>
+  <line x1="190" y1="505" x2="1045" y2="505" stroke="#dbeafe" stroke-width="6" opacity=".35"/>
+  <line x1="190" y1="165" x2="190" y2="505" stroke="#dbeafe" stroke-width="6" opacity=".35"/>
+  <circle cx="650" cy="345" r="34" fill="#51e178"/>
+
+</svg>

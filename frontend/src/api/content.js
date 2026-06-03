@@ -1,11 +1,7 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api';
+import { apiRequest } from './client';
 
 async function request(path) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+  const response = await apiRequest(path);
 
   const data = await response.json().catch(() => ({}));
 
@@ -17,12 +13,19 @@ async function request(path) {
   return data;
 }
 
-export function getNewsArticles({ newsTypes = [] } = {}) {
+export function getNewsArticles({ newsTypes = [], dateRange = '24h', page = 1, pageSize = 20 } = {}) {
   const params = new URLSearchParams();
 
   if (newsTypes.length > 0) {
     params.set('news_type', newsTypes.join(','));
   }
+
+  if (dateRange) {
+    params.set('date_range', dateRange);
+  }
+
+  params.set('page', String(page));
+  params.set('page_size', String(pageSize));
 
   const query = params.toString();
   return request(`/content/news/${query ? `?${query}` : ''}`);

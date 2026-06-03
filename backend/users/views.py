@@ -1,5 +1,8 @@
-from django.contrib.auth.hashers import check_password
+from django.conf import settings
+from django.contrib.auth.hashers import check_password, make_password
+from django.core.mail import send_mail
 from django.db.models import Q
+from django.utils.crypto import get_random_string
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -150,3 +153,59 @@ class LoginView(APIView):
                 "selected_agent": profile.selected_agent,
             }
         )
+
+
+class PasswordResetRequestView(APIView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "password_reset"
+
+    def post(self, request):
+        email = (request.data.get("email") or "").strip()
+
+        if not email:
+            return Response(
+                {
+                    "detail": "Email is required.",
+                    "error": "missing_email",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        profile = UserProfile.objects.filter(email__iexact=email).first()
+
+        if not profile:
+            return Response(
+                {
+                    "detail": "User does not exist.",
+                    "error": "user_not_found",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        temporary_password = get_random_string(
+            14,
+            allowed_chars="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789",
+        )
+        if not settings.DEBUG:
+            send_mail(
+                "Your FinanU temporary password",
+                (
+                    "We received a password reset request for your FinanU account.\n\n"
+                    f"Temporary password: {temporary_password}\n\n"
+                    "Sign in with this temporary password and update it from your profile settings."
+                ),
+                settings.DEFAULT_FROM_EMAIL,
+                [profile.email],
+                fail_silently=False,
+            )
+
+        profile.password_hash = make_password(temporary_password)
+        profile.save(update_fields=["password_hash"])
+
+        payload = {
+            "message": "Temporary password generated.",
+        }
+        if settings.DEBUG:
+            payload["temporary_password"] = temporary_password
+
+        return Response(payload)

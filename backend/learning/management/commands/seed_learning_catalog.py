@@ -2,7 +2,7 @@ import re
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import F, Q
 from django.utils.text import slugify
 
 from learning.models import (
@@ -86,6 +86,10 @@ def lesson_cover_path(language, course_order, course_id, lesson_order, title):
     raw = f"{language}-{course_order:02d}-{course_id}-{lesson_order:02d}-{title.lower()}"
     slug = re.sub(r"[^a-z0-9]+", "-", raw).strip("-")[:110]
     return f"/learning/lesson-covers/{slug}.svg"
+
+
+def youtube_thumbnail_url(video_id):
+    return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
 
 TAXONOMY = {
     "categories": [
@@ -186,6 +190,19 @@ RESOURCES = [
     },
     {
         "language": "en",
+        "title": "Budgeting Basics",
+        "provider": "Two Cents",
+        "source_type": "media",
+        "url": "https://www.youtube.com/watch?v=sVKQn2I4HDM",
+        "youtube_video_id": "sVKQn2I4HDM",
+        "format": "video",
+        "level": "beginner",
+        "category": "personal-finance",
+        "duration": 5,
+        "description": "Short PBS-style video explaining how to make a budget, track spending and plan categories.",
+    },
+    {
+        "language": "en",
         "title": "Binance Academy",
         "provider": "Binance Academy",
         "source_type": "commercial_platform",
@@ -207,6 +224,19 @@ RESOURCES = [
         "category": "crypto",
         "duration": 35,
         "description": "Structured crypto courses on blockchain, DeFi, NFTs and Web3 concepts.",
+    },
+    {
+        "language": "en",
+        "title": "What is Bitcoin?",
+        "provider": "WeUseCoins",
+        "source_type": "independent_creator",
+        "url": "https://www.youtube.com/watch?v=Gc2en3nHxA4",
+        "youtube_video_id": "Gc2en3nHxA4",
+        "format": "video",
+        "level": "beginner",
+        "category": "crypto",
+        "duration": 12,
+        "description": "A concise introduction to Bitcoin as a decentralized peer-to-peer monetary network.",
     },
     {
         "language": "en",
@@ -243,6 +273,19 @@ RESOURCES = [
         "category": "forex",
         "duration": 45,
         "description": "Free and well-known Forex school with lessons and quizzes for beginners.",
+    },
+    {
+        "language": "en",
+        "title": "Forex Risk Basics",
+        "provider": "YouTube",
+        "source_type": "independent_creator",
+        "url": "https://www.youtube.com/watch?v=YGUyI6K3eWY",
+        "youtube_video_id": "YGUyI6K3eWY",
+        "format": "video",
+        "level": "beginner",
+        "category": "forex",
+        "duration": 15,
+        "description": "Introductory video about currency pairs, leverage and why risk management comes first.",
     },
     {
         "language": "en",
@@ -450,6 +493,32 @@ RESOURCES = [
     },
     {
         "language": "pl",
+        "title": "Sprawdzone sposoby bogacenia sie",
+        "provider": "Marcin Iwuc",
+        "source_type": "independent_creator",
+        "url": "https://www.youtube.com/watch?v=FfhSj9hXykw",
+        "youtube_video_id": "FfhSj9hXykw",
+        "format": "video",
+        "level": "beginner",
+        "category": "personal-finance",
+        "duration": 55,
+        "description": "Rozmowa o kontroli wydatkow, poduszce bezpieczenstwa i inwestowaniu nadwyzek.",
+    },
+    {
+        "language": "pl",
+        "title": "40 lat i kasy brak",
+        "provider": "Marcin Iwuc",
+        "source_type": "independent_creator",
+        "url": "https://www.youtube.com/watch?v=w6ovkxeXaOg",
+        "youtube_video_id": "w6ovkxeXaOg",
+        "format": "video",
+        "level": "beginner",
+        "category": "personal-finance",
+        "duration": 24,
+        "description": "Lekcja o finansowym restarcie, priorytetach i unikaniu kosztownych bledow.",
+    },
+    {
+        "language": "pl",
         "title": "Marcin Iwuc YouTube",
         "provider": "Marcin Iwuc",
         "source_type": "independent_creator",
@@ -495,6 +564,171 @@ RESOURCES = [
         "category": "forex",
         "duration": 25,
         "description": "Kanal o Forex, tradingu i rynkach; uzywany w FinanU wylacznie edukacyjnie.",
+    },
+]
+
+COURSE_GROUPS = [
+    {
+        "language": "en",
+        "title": "Personal Finance Basics",
+        "slug": "en-personal-finance-basics",
+        "description": "Beginner resources for saving, planning, financial wellbeing and everyday money decisions.",
+        "category": "personal-finance",
+        "level": "beginner",
+        "course_type": "course",
+        "order": 1,
+        "resources": [
+            "https://www.youtube.com/watch?v=sVKQn2I4HDM",
+            "https://www.open.edu/openlearn/money-management/free-courses",
+        ],
+    },
+    {
+        "language": "en",
+        "title": "Economics and Market Context",
+        "slug": "en-economics-and-market-context",
+        "description": "Core economics concepts and market context for better financial decisions.",
+        "category": "economics",
+        "level": "beginner",
+        "course_type": "course",
+        "order": 2,
+        "resources": [
+            "https://www.khanacademy.org/economics-finance-domain",
+            "https://www.investopedia.com/the-investopedia-express-podcast-5215636",
+        ],
+    },
+    {
+        "language": "en",
+        "title": "Investing Foundations",
+        "slug": "en-investing-foundations",
+        "description": "A practical path through finance basics, investment products, diversification and risk.",
+        "category": "investing",
+        "level": "beginner",
+        "course_type": "course",
+        "order": 3,
+        "resources": [
+            "https://www.khanacademy.org/economics-finance-domain/core-finance",
+            "https://www.open.edu/openlearn/money-business/managing-my-investments",
+        ],
+    },
+    {
+        "language": "en",
+        "title": "Academic Finance",
+        "slug": "en-academic-finance",
+        "description": "University-level finance material on markets, valuation, risk and behavioral finance.",
+        "category": "investing",
+        "level": "intermediate",
+        "course_type": "course",
+        "order": 4,
+        "resources": [
+            "https://online.yale.edu/courses/financial-markets",
+            "https://ocw.mit.edu/courses/15-401-finance-theory-i-fall-2008/",
+        ],
+    },
+    {
+        "language": "en",
+        "title": "Crypto Foundations and Safety",
+        "slug": "en-crypto-foundations-and-safety",
+        "description": "Structured crypto education focused on concepts, wallets, market basics and security.",
+        "category": "crypto",
+        "level": "beginner",
+        "course_type": "course",
+        "order": 5,
+        "resources": [
+            "https://www.youtube.com/watch?v=Gc2en3nHxA4",
+            "https://www.binance.com/en/academy/courses",
+            "https://www.coinbase.com/learn/tips-and-tutorials",
+        ],
+    },
+    {
+        "language": "en",
+        "title": "Forex Basics",
+        "slug": "en-forex-basics",
+        "description": "A beginner route for currency pairs, pips, leverage and risk-first Forex learning.",
+        "category": "forex",
+        "level": "beginner",
+        "course_type": "course",
+        "order": 6,
+        "resources": [
+            "https://www.youtube.com/watch?v=YGUyI6K3eWY",
+            "https://www.babypips.com/learn/forex",
+        ],
+    },
+    {
+        "language": "pl",
+        "title": "Finanse osobiste i nawyki",
+        "slug": "pl-finanse-osobiste-i-nawyki",
+        "description": "Podstawowa sciezka o budzecie, oszczedzaniu, nawykach i codziennych decyzjach finansowych.",
+        "category": "personal-finance",
+        "level": "beginner",
+        "course_type": "course",
+        "order": 1,
+        "resources": [
+            "https://www.youtube.com/watch?v=FfhSj9hXykw",
+            "https://www.youtube.com/watch?v=w6ovkxeXaOg",
+            "https://marciniwuc.com/",
+            "https://podcasts.apple.com/pl/podcast/finanse-bardzo-osobiste-oszcz%C4%99dzanie-inwestowanie-pieni%C4%85dze/id946719109",
+        ],
+    },
+    {
+        "language": "pl",
+        "title": "Bezpieczenstwo finansowe i konsument",
+        "slug": "pl-bezpieczenstwo-finansowe-i-konsument",
+        "description": "Zasoby o ochronie konsumenta, ryzykach, regulacji i bezpiecznym korzystaniu z finansow.",
+        "category": "personal-finance",
+        "level": "beginner",
+        "course_type": "course",
+        "order": 2,
+        "resources": [
+            "https://finanse.uokik.gov.pl/category/kredyty-konsumenckie/",
+            "https://www.knf.gov.pl/edukacja_finansowa",
+            "https://www.knf.gov.pl/co_robimy/publikacje_edukacyjne",
+            "https://www.knf.gov.pl/co_robimy/edukacja_finansowa/seminaria_cedur",
+        ],
+    },
+    {
+        "language": "pl",
+        "title": "Ekonomia i bank centralny",
+        "slug": "pl-ekonomia-i-bank-centralny",
+        "description": "Ekonomia, inflacja, bank centralny, makro i komentarze do systemu finansowego.",
+        "category": "economics",
+        "level": "beginner",
+        "course_type": "course",
+        "order": 3,
+        "resources": [
+            "https://nbp.pl/edukacja/",
+            "https://nbp.pl/edukacja/zasoby-edukacyjne/",
+            "https://www.obserwatorfinansowy.pl/",
+            "https://open.spotify.com/show/2nXC3fQO7P09vD1gUkqSYe",
+        ],
+    },
+    {
+        "language": "pl",
+        "title": "Inwestowanie i gielda",
+        "slug": "pl-inwestowanie-i-gielda",
+        "description": "Kurs o rynku kapitalowym, akcjach, ETF-ach, obligacjach i spokojnym inwestowaniu.",
+        "category": "investing",
+        "level": "beginner",
+        "course_type": "course",
+        "order": 4,
+        "resources": [
+            "https://www.gpw.pl/szkola-gieldowa",
+            "https://www.gpw.pl/fundacja-gpw-platforma-edukacyjna",
+            "https://kursnagielde.pl/filmy-edukacyjne/",
+        ],
+    },
+    {
+        "language": "pl",
+        "title": "Krypto od podstaw",
+        "slug": "pl-krypto-od-podstaw",
+        "description": "Sciezka dla poczatkujacych o blockchainie, kryptowalutach, DeFi, Web3 i ryzyku.",
+        "category": "crypto",
+        "level": "beginner",
+        "course_type": "course",
+        "order": 5,
+        "resources": [
+            "https://www.binance.com/pl/academy/start-here",
+            "https://www.binance.com/pl/academy/track/beginner-track",
+        ],
     },
 ]
 
@@ -635,79 +869,119 @@ class Command(BaseCommand):
     def seed_resources(self, categories, levels, types):
         course_count = 0
         lesson_count = 0
+        resources_by_url = {resource["url"]: resource for resource in RESOURCES}
+        grouped_resource_urls = {
+            resource_url
+            for group in COURSE_GROUPS
+            for resource_url in group["resources"]
+        }
 
-        for order, resource in enumerate(RESOURCES, start=1):
-            category = categories[resource["category"]]
-            level = levels[resource["level"]]
-            course_type = types[resource["format"]]
-            disclaimer = get_disclaimer(resource)
-            course_slug = stable_slug(resource["language"], resource["provider"], resource["title"])
-            course_order = RESOURCE_ORDER_OVERRIDES.get(resource["url"], order)
+        for group in COURSE_GROUPS:
+            group_resources = [
+                resources_by_url[resource_url]
+                for resource_url in group["resources"]
+                if resource_url in resources_by_url and resource_url not in INACTIVE_RESOURCE_URLS
+            ]
+            if not group_resources:
+                continue
+
+            category = categories[group["category"]]
+            level = levels[group["level"]]
+            course_type = types[group["course_type"]]
+            course_slug = group["slug"]
+            course_order = group["order"]
             course_image_url = course_cover_path(
-                resource["language"],
+                group["language"],
                 course_order,
-                resource["title"],
+                group["title"],
             )
 
-            course = self.find_course(resource, course_slug)
+            course = self.find_group_course(group, course_slug)
             if not course:
                 course = Course(slug=course_slug)
 
-            course.title = resource["title"]
-            course.description = resource["description"]
-            course.provider = resource["provider"]
-            course.source_type = resource["source_type"]
-            course.external_url = resource["url"]
-            course.language = resource["language"]
+            course.title = group["title"]
+            course.description = group["description"]
+            course.provider = "FinanU"
+            course.source_type = Course.SourceType.CURATED
+            course.external_url = group_resources[0]["url"]
+            course.language = group["language"]
             course.category = category
             course.course_type = course_type
             course.level = level
             course.thumbnail_url = course_image_url
             course.cover_image_url = course_image_url
-            course.estimated_duration_minutes = resource["duration"]
+            course.estimated_duration_minutes = sum(resource["duration"] for resource in group_resources)
             course.order = course_order
             course.is_required = True
-            course.is_active = resource["url"] not in INACTIVE_RESOURCE_URLS
+            course.is_active = True
             course.save()
             course_count += 1
+            course.lessons.update(order=F("order") + 1000)
 
-            lesson_slug = stable_slug("intro", resource["provider"], resource["title"])
-            lesson = self.find_lesson(course, resource, lesson_slug)
-            if not lesson:
-                lesson = Lesson(course=course, slug=lesson_slug)
-            lesson_image_url = lesson_cover_path(
-                resource["language"],
-                course_order,
-                course.id,
-                1,
-                lesson_title(resource),
+            for lesson_order, resource in enumerate(group_resources, start=1):
+                resource_category = categories[resource["category"]]
+                resource_level = levels[resource["level"]]
+                disclaimer = get_disclaimer(resource)
+                lesson_slug = stable_slug(resource["provider"], resource["title"])
+                lesson = self.find_lesson(course, resource, lesson_slug)
+                if not lesson:
+                    lesson = Lesson(course=course, slug=lesson_slug)
+                youtube_video_id = resource.get("youtube_video_id", "")
+                lesson_image_url = (
+                    youtube_thumbnail_url(youtube_video_id)
+                    if youtube_video_id
+                    else lesson_cover_path(
+                        resource["language"],
+                        course_order,
+                        course.id,
+                        lesson_order,
+                        resource["title"],
+                    )
+                )
+
+                lesson.course = course
+                lesson.title = resource["title"]
+                lesson.description = resource["description"]
+                lesson.content_type = resource["format"]
+                lesson.provider = resource["provider"]
+                lesson.source_channel = resource["provider"]
+                lesson.source_url = resource["url"]
+                lesson.external_url = resource["url"]
+                lesson.image_url = lesson_image_url
+                lesson.content_language = resource["language"]
+                lesson.level = resource_level
+                lesson.category = resource_category
+                lesson.youtube_url = resource["url"] if youtube_video_id else ""
+                lesson.youtube_video_id = youtube_video_id
+                lesson.duration_minutes = resource["duration"]
+                lesson.summary = self.summary_for(resource, disclaimer)
+                lesson.embed_allowed = "manual_review"
+                lesson.requires_disclaimer = bool(disclaimer)
+                lesson.disclaimer = disclaimer
+                lesson.order = lesson_order
+                lesson.is_active = True
+                lesson.save()
+                lesson_count += 1
+
+                self.seed_quiz(lesson, resource)
+
+            course.lessons.exclude(external_url__in=[resource["url"] for resource in group_resources]).update(
+                is_active=False
             )
 
-            lesson.course = course
-            lesson.title = lesson_title(resource)
-            lesson.description = resource["description"]
-            lesson.content_type = resource["format"]
-            lesson.provider = resource["provider"]
-            lesson.source_channel = resource["provider"]
-            lesson.source_url = resource["url"]
-            lesson.external_url = resource["url"]
-            lesson.image_url = lesson_image_url
-            lesson.content_language = resource["language"]
-            lesson.level = level
-            lesson.category = category
-            lesson.duration_minutes = resource["duration"]
-            lesson.summary = self.summary_for(resource, disclaimer)
-            lesson.embed_allowed = "manual_review"
-            lesson.requires_disclaimer = bool(disclaimer)
-            lesson.disclaimer = disclaimer
-            lesson.order = 1
-            lesson.is_active = resource["url"] not in INACTIVE_RESOURCE_URLS
-            lesson.save()
-            lesson_count += 1
-
-            self.seed_quiz(lesson, resource)
+        Course.objects.exclude(slug__in=[group["slug"] for group in COURSE_GROUPS]).filter(
+            external_url__in=grouped_resource_urls
+        ).update(is_active=False)
 
         return course_count, lesson_count
+
+    def find_group_course(self, group, slug):
+        return (
+            Course.objects.filter(Q(slug=slug) | Q(title=group["title"], language=group["language"]))
+            .order_by("id")
+            .first()
+        )
 
     def find_course(self, resource, slug):
         return (

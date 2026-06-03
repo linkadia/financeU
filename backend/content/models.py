@@ -66,6 +66,8 @@ class NewsArticle(models.Model):
         ordering = ["-published_at"]
         indexes = [
             models.Index(fields=["news_type", "difficulty", "status"]),
+            models.Index(fields=["status", "-published_at"], name="content_new_status_04d6dd_idx"),
+            models.Index(fields=["status", "news_type", "-published_at"], name="content_new_status_6814d5_idx"),
         ]
 
     def __str__(self):

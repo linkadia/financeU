@@ -5,9 +5,7 @@ import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useI18n } from '../i18n/I18nContext';
 import { translateApiError } from '../utils/apiErrors';
 import { setCurrentUser } from '../utils/session';
-
-const LOGO_URL =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuBEVed2cAWQhnZmCYEo8c7WnwYIxlNA8zO2VYCdovKuhg8KE8xlG8sQc2GXEJnMN9ixwYTJD6kYNpQY5zWsG8phfAnIPEbAVRwXXhi7uF2IfyHaMDGbrS9cbxmQ1uKXP6_JVfyznFvUHS4BGbnL8Lj_2hsO94H0FvU3lASYXdyoEWPjreBt9DIb-X8ccHLAdA3bkAYarOgY9tIlEr69X5ypl3nQV1XMAKsFN-5xraYqqsprwwB8RJ_DjBwylcNmUSw_KIjXOL-fLu0L';
+import logoUrl from '../assets/logoFinancU.svg';
 
 const initialForm = {
   username: '',
@@ -67,7 +65,7 @@ export default function Signup() {
     <div className="min-h-[100dvh] bg-background text-on-surface flex flex-col overflow-x-hidden">
       <header className="sticky top-0 z-50 flex h-16 w-full items-center justify-between border-b border-white/10 bg-surface/80 px-container-padding shadow-sm backdrop-blur-xl">
         <Link className="flex items-center gap-base text-primary" to="/" aria-label={t('auth.backToLogin')}>
-          <img alt="FinanU Logo" className="h-8 w-auto object-contain" src={LOGO_URL} />
+          <img alt="FinanU Logo" className="h-8 w-auto object-contain" src={logoUrl} />
         </Link>
         <div className="flex items-center">
           <LanguageSwitcher compact />
@@ -97,7 +95,7 @@ export default function Signup() {
         <form className="mt-8 w-full max-w-md space-y-stack-md" onSubmit={handleSubmit}>
           <label className="block">
             <span className="sr-only">{t('auth.username')}</span>
-            <span className="group relative flex items-center rounded-xl border border-white/10 bg-surface-container-lowest transition-all duration-200 focus-within:border-secondary focus-within:shadow-[0_0_8px_rgba(81,225,120,0.2)]">
+            <span className="group relative flex items-center rounded-xl border border-white/10 bg-surface-container-lowest transition-all duration-200 focus-within:border-secondary focus-within:shadow-[0_0_8px_rgba(255,186,60,0.2)]">
               <span className="material-symbols-outlined absolute left-4 text-on-surface-variant">person</span>
               <input
                 className="w-full border-none bg-transparent py-4 pl-12 pr-4 font-body-md text-on-surface placeholder:text-outline focus:ring-0"
@@ -113,7 +111,7 @@ export default function Signup() {
 
           <label className="block">
             <span className="sr-only">{t('auth.email')}</span>
-            <span className="group relative flex items-center rounded-xl border border-white/10 bg-surface-container-lowest transition-all duration-200 focus-within:border-secondary focus-within:shadow-[0_0_8px_rgba(81,225,120,0.2)]">
+            <span className="group relative flex items-center rounded-xl border border-white/10 bg-surface-container-lowest transition-all duration-200 focus-within:border-secondary focus-within:shadow-[0_0_8px_rgba(255,186,60,0.2)]">
               <span className="material-symbols-outlined absolute left-4 text-on-surface-variant">mail</span>
               <input
                 className="w-full border-none bg-transparent py-4 pl-12 pr-4 font-body-md text-on-surface placeholder:text-outline focus:ring-0"
@@ -130,7 +128,7 @@ export default function Signup() {
           <div className="grid gap-gutter sm:grid-cols-2">
             <label className="block">
               <span className="sr-only">{t('auth.password')}</span>
-              <span className="group relative flex items-center rounded-xl border border-white/10 bg-surface-container-lowest transition-all duration-200 focus-within:border-secondary focus-within:shadow-[0_0_8px_rgba(81,225,120,0.2)]">
+              <span className="group relative flex items-center rounded-xl border border-white/10 bg-surface-container-lowest transition-all duration-200 focus-within:border-secondary focus-within:shadow-[0_0_8px_rgba(255,186,60,0.2)]">
                 <span className="material-symbols-outlined absolute left-4 text-on-surface-variant">lock</span>
                 <input
                   className="w-full border-none bg-transparent py-4 pl-12 pr-12 font-body-md text-on-surface placeholder:text-outline focus:ring-0"
@@ -156,7 +154,7 @@ export default function Signup() {
 
             <label className="block">
               <span className="sr-only">{t('auth.confirmPassword')}</span>
-              <span className="group relative flex items-center rounded-xl border border-white/10 bg-surface-container-lowest transition-all duration-200 focus-within:border-secondary focus-within:shadow-[0_0_8px_rgba(81,225,120,0.2)]">
+              <span className="group relative flex items-center rounded-xl border border-white/10 bg-surface-container-lowest transition-all duration-200 focus-within:border-secondary focus-within:shadow-[0_0_8px_rgba(255,186,60,0.2)]">
                 <span className="material-symbols-outlined absolute left-4 text-on-surface-variant">lock_reset</span>
                 <input
                   className="w-full border-none bg-transparent py-4 pl-12 pr-12 font-body-md text-on-surface placeholder:text-outline focus:ring-0"

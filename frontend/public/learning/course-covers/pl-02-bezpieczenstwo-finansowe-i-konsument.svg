@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Bezpieczenstwo finansowe i konsument</title>
+  <desc id="desc">Decorative learning course cover</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#113f67"/>
+      <stop offset="1" stop-color="#0b1020"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="76%" cy="28%" r="60%">
+      <stop offset="0" stop-color="#f2ae2e" stop-opacity=".72"/>
+      <stop offset="1" stop-color="#f2ae2e" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <rect width="1200" height="675" fill="url(#glow)"/>
+  <circle cx="1040" cy="110" r="230" fill="#f2ae2e" opacity=".08"/>
+  <circle cx="135" cy="600" r="280" fill="#ffffff" opacity=".045"/>
+  <path d="M0 500 C180 420 300 610 520 520 S870 360 1200 455 V675 H0 Z" fill="#f2ae2e" opacity=".16"/>
+  
+  <circle cx="365" cy="315" r="132" fill="#f2ae2e" opacity=".9"/>
+  <circle cx="365" cy="315" r="86" fill="#07111f" opacity=".18"/>
+  <path d="M655 205 H955 Q990 205 990 240 V455 Q990 490 955 490 H655 Q620 490 620 455 V240 Q620 205 655 205 Z" fill="#d6f5e3" opacity=".18"/>
+  <path d="M660 278 H960 M660 348 H890 M660 418 H930" stroke="#d6f5e3" stroke-width="24" stroke-linecap="round" opacity=".6"/>
+  <path d="M285 315 H445 M365 235 V395" stroke="#07111f" stroke-width="28" stroke-linecap="round" opacity=".45"/>
+
+</svg>

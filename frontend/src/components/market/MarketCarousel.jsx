@@ -20,8 +20,8 @@ const FEED_FILTER_TO_MARKET_CATEGORY = {
 const DIRECTION_STYLES = {
   UP: {
     icon: 'trending_up',
-    tone: 'border-secondary/30 bg-secondary/10 text-secondary',
-    text: 'text-secondary',
+    tone: 'border-metric/30 bg-metric/10 text-metric',
+    text: 'text-metric',
   },
   DOWN: {
     icon: 'trending_down',
@@ -347,9 +347,13 @@ export default function MarketCarousel({ lang, selectedFeedFilter, userInterests
     () => categoriesForFilter(selectedFeedFilter, userInterests),
     [selectedFeedFilter, userInterests]
   );
+  const displayedItems = useMemo(
+    () => items.filter((row) => marketItemMatchesSearch(row, searchQuery, lang)),
+    [items, lang, searchQuery]
+  );
   const marqueeItems = useMemo(
-    () => (items.length > 1 ? [...items, ...items, ...items] : items),
-    [items]
+    () => (displayedItems.length > 1 ? [...displayedItems, ...displayedItems, ...displayedItems] : displayedItems),
+    [displayedItems]
   );
 
   useEffect(() => {
@@ -377,8 +381,7 @@ export default function MarketCarousel({ lang, selectedFeedFilter, userInterests
         const filteredRows = selectedCategory
           ? rows
           : rows.filter((row) => categories.includes(row.category));
-        const searchedRows = filteredRows.filter((row) => marketItemMatchesSearch(row, searchQuery, lang));
-        const sortedRows = [...searchedRows].sort((a, b) => a.display_order - b.display_order);
+        const sortedRows = [...filteredRows].sort((a, b) => a.display_order - b.display_order);
 
         if (isMounted) {
           setItems(sortedRows);
@@ -400,11 +403,11 @@ export default function MarketCarousel({ lang, selectedFeedFilter, userInterests
     return () => {
       isMounted = false;
     };
-  }, [categories, lang, searchQuery]);
+  }, [categories, lang]);
 
   useEffect(() => {
     const scroller = scrollerRef.current;
-    if (!scroller || items.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (!scroller || displayedItems.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       return undefined;
     }
 
@@ -451,7 +454,7 @@ export default function MarketCarousel({ lang, selectedFeedFilter, userInterests
 
     animationFrame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animationFrame);
-  }, [items]);
+  }, [displayedItems]);
 
   const pauseAutoScroll = () => {
     pauseUntilRef.current = Date.now() + 2500;
@@ -463,7 +466,7 @@ export default function MarketCarousel({ lang, selectedFeedFilter, userInterests
   };
 
   const handleManualScroll = () => {
-    if (isNormalizingRef.current || items.length < 2) return;
+    if (isNormalizingRef.current || displayedItems.length < 2) return;
 
     const scroller = scrollerRef.current;
     if (!scroller) return;
@@ -500,7 +503,7 @@ export default function MarketCarousel({ lang, selectedFeedFilter, userInterests
     );
   }
 
-  if (items.length === 0) {
+  if (displayedItems.length === 0) {
     return null;
   }
 

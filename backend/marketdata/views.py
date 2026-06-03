@@ -1,3 +1,6 @@
+from django.db.models import OuterRef, Subquery
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -42,25 +45,33 @@ class ProductListView(APIView):
 class LatestSnapshotsView(APIView):
     throttle_classes = []
 
+    @method_decorator(cache_page(60))
     def get(self, request):
         usable_statuses = [
             FinancialProductSnapshot.ValidationStatus.VALID,
             FinancialProductSnapshot.ValidationStatus.PARTIAL,
         ]
-        snapshots = []
-
-        for product in filtered_active_products(request):
-            snapshot = (
-                product.snapshots.filter(
-                    validation_status__in=usable_statuses,
-                    current_value__isnull=False,
-                    effective_at_raw__isnull=False,
-                )
-                .order_by("-effective_datetime", "-effective_date", "-created_at")
-                .first()
-            )
-            if snapshot is not None:
-                snapshots.append(snapshot)
+        latest_snapshot = FinancialProductSnapshot.objects.filter(
+            product=OuterRef("pk"),
+            validation_status__in=usable_statuses,
+            current_value__isnull=False,
+            effective_at_raw__isnull=False,
+        ).order_by("-effective_datetime", "-effective_date", "-created_at")
+        products = list(
+            filtered_active_products(request)
+            .annotate(latest_snapshot_id=Subquery(latest_snapshot.values("id")[:1]))
+            .filter(latest_snapshot_id__isnull=False)
+        )
+        snapshot_ids = [product.latest_snapshot_id for product in products]
+        snapshot_by_id = {
+            snapshot.id: snapshot
+            for snapshot in FinancialProductSnapshot.objects.filter(id__in=snapshot_ids).select_related("product")
+        }
+        snapshots = [
+            snapshot_by_id[product.latest_snapshot_id]
+            for product in products
+            if product.latest_snapshot_id in snapshot_by_id
+        ]
 
         serializer = LatestMarketSnapshotSerializer(
             snapshots,

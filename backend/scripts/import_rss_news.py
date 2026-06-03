@@ -226,6 +226,11 @@ def child_text(item, tag_name):
     child = item.find(tag_name)
     return clean_text(child.text if child is not None else "")
 
+
+def normalize_identity_text(value):
+    return re.sub(r"\s+", " ", clean_text(value)).strip().casefold()
+
+
 def clean_url(url):
     if not url:
         return ""
@@ -285,6 +290,17 @@ def item_source(item):
 
 def content_hash(source_url, external_id, headline):
     raw = "|".join([source_url or "", external_id or "", headline or ""])
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def article_identity_key(source_name, headline, published_at):
+    raw = "|".join(
+        [
+            normalize_identity_text(source_name),
+            normalize_identity_text(headline),
+            published_at.isoformat() if published_at else "",
+        ]
+    )
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
@@ -534,7 +550,7 @@ def llm_classification(llm, data):
     return parsed
 
 
-def build_candidate_from_item(item, min_published_at, seen_hashes):
+def build_candidate_from_item(item, min_published_at, seen_hashes, seen_identity_keys):
     headline = child_text(item, "title")
     raw_source_url = child_text(item, "link")
     source_url = clean_url(raw_source_url)[:500]
@@ -553,17 +569,25 @@ def build_candidate_from_item(item, min_published_at, seen_hashes):
 
     hash_basis = external_id or source_url or f"{source_name}|{headline}|{published_at.isoformat()}"
     article_hash = hashlib.sha256(hash_basis.encode("utf-8")).hexdigest()
+    identity_key = article_identity_key(source_name, headline, published_at)
 
-    if article_hash in seen_hashes:
+    if article_hash in seen_hashes or identity_key in seen_identity_keys:
         return None, "duplicate_in_xml"
 
     seen_hashes.add(article_hash)
+    seen_identity_keys.add(identity_key)
 
     duplicate_query = Q(content_hash=article_hash)
     if external_id:
-        duplicate_query |= Q(external_id=external_id)
+        duplicate_query |= Q(external_id__iexact=external_id)
     if source_url:
-        duplicate_query |= Q(source_url=source_url)
+        duplicate_query |= Q(source_url__iexact=source_url)
+    duplicate_query |= Q(ai_metadata__rss_identity_key=identity_key)
+    duplicate_query |= Q(
+        headline__iexact=headline,
+        source_name__iexact=source_name[:120],
+        published_at=published_at,
+    )
 
     if NewsArticle.objects.filter(duplicate_query).exists():
         return None, "existing"
@@ -573,6 +597,7 @@ def build_candidate_from_item(item, min_published_at, seen_hashes):
         "description": description,
         "external_id": external_id,
         "headline": headline,
+        "identity_key": identity_key,
         "item": item,
         "published_at": published_at,
         "rss_source_url": rss_source_url,
@@ -601,10 +626,11 @@ def import_items(xml_path, use_llm=False, limit=None, min_published_at=None):
     total_input_tokens = 0
     total_output_tokens = 0
     seen_hashes = set()
+    seen_identity_keys = set()
     candidates = []
 
     for item in items[:limit]:
-        candidate, status = build_candidate_from_item(item, min_published_at, seen_hashes)
+        candidate, status = build_candidate_from_item(item, min_published_at, seen_hashes, seen_identity_keys)
 
         if status == "invalid":
             skipped += 1
@@ -638,6 +664,7 @@ def import_items(xml_path, use_llm=False, limit=None, min_published_at=None):
         description = candidate["description"]
         external_id = candidate["external_id"]
         headline = candidate["headline"]
+        identity_key = candidate["identity_key"]
         item = candidate["item"]
         published_at = candidate["published_at"]
         rss_source_url = candidate["rss_source_url"]
@@ -704,6 +731,8 @@ def import_items(xml_path, use_llm=False, limit=None, min_published_at=None):
             external_id=external_id[:255],
             ai_metadata={
                 "rss_source_url": rss_source_url,
+                "rss_identity_key": identity_key,
+                "rss_original_headline": headline,
                 "llm_provider": "gemini" if llm_succeeded else "",
                 "llm_model": os.getenv("NEWS_LLM_MODEL", "gemini-3.1-flash-lite") if llm_succeeded else "",
                 "llm_fallback": bool(llm is not None and not llm_succeeded),

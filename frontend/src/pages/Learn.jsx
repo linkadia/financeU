@@ -59,7 +59,7 @@ function LessonStatusIcon({ completed, active, locked }) {
 
   if (completed) {
     return (
-      <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>
+      <span className="material-symbols-outlined text-metric" style={{ fontVariationSettings: "'FILL' 1" }}>
         check_circle
       </span>
     );
@@ -127,21 +127,19 @@ export default function Learn() {
   const requestedLessonParam = searchParams.get("lesson");
   const currentUser = useMemo(() => getCurrentUser(), []);
   const localCourses = useMemo(() => getLocalCourses(language), [language]);
-  const [courses, setCourses] = useState(localCourses);
+  const [courses, setCourses] = useState([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
   const [progress, setProgress] = useState(loadProgress);
-  const initialCourseId = Number(requestedCourseParam) || courses[0]?.id;
-  const initialCourse = courses.find((course) => course.id === initialCourseId) || courses[0];
-  const [activeCourseId, setActiveCourseId] = useState(initialCourse?.id);
-  const [activeLessonId, setActiveLessonId] = useState(
-    Number(requestedLessonParam) || initialCourse?.lessons[0]?.id
-  );
+  const [activeCourseId, setActiveCourseId] = useState(Number(requestedCourseParam) || null);
+  const [activeLessonId, setActiveLessonId] = useState(Number(requestedLessonParam) || null);
   const [selectedOptionIds, setSelectedOptionIds] = useState({});
   const [examFeedback, setExamFeedback] = useState({});
   const [quizResult, setQuizResult] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
-    setCourses(localCourses);
+    setCourses([]);
+    setCatalogLoading(true);
 
     getLearningCatalog(language)
       .then((catalog) => {
@@ -152,6 +150,11 @@ export default function Learn() {
       .catch(() => {
         if (!cancelled) {
           setCourses(localCourses);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setCatalogLoading(false);
         }
       });
 
@@ -235,6 +238,27 @@ export default function Learn() {
   const activeCourse = activeCourseState?.course || activeCourses[0];
   const activeLesson =
     activeLessonId ? activeCourse?.lessons.find((lesson) => lesson.id === activeLessonId) : null;
+
+  useEffect(() => {
+    if (activeCourses.length === 0) return;
+
+    const requestedCourseId = Number(requestedCourseParam);
+    const requestedLessonId = Number(requestedLessonParam);
+    const requestedCourse = activeCourses.find((course) => course.id === requestedCourseId);
+    const currentCourse = activeCourses.find((course) => course.id === activeCourseId);
+    const nextCourse = requestedCourse || currentCourse || activeCourses[0];
+    const requestedLesson = nextCourse.lessons.find((lesson) => lesson.id === requestedLessonId);
+    const currentLesson = nextCourse.lessons.find((lesson) => lesson.id === activeLessonId);
+    const nextLesson = requestedLesson || currentLesson || nextCourse.lessons[0];
+
+    if (nextCourse.id !== activeCourseId) {
+      setActiveCourseId(nextCourse.id);
+    }
+
+    if (nextLesson?.id !== activeLessonId) {
+      setActiveLessonId(nextLesson?.id || null);
+    }
+  }, [activeCourseId, activeCourses, activeLessonId, requestedCourseParam, requestedLessonParam]);
 
   const globalProgress = useMemo(() => {
     const allLessons = courses.flatMap((course) =>
@@ -428,9 +452,9 @@ export default function Learn() {
               </h1>
             </div>
             <div className="text-right">
-              <p className="font-mono-data text-[22px] text-secondary">{globalProgress.percentage}%</p>
+              <p className="font-mono-data text-[22px] text-metric">{courseStates.length}</p>
               <p className="text-label-sm text-on-surface-variant">
-                {globalProgress.completed}/{globalProgress.total} {t("learn.done")}
+                {t("learn.courses")}
               </p>
             </div>
           </div>
@@ -438,10 +462,12 @@ export default function Learn() {
           <GlassCard className="p-stack-md">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-label-sm text-on-surface-variant">{t("learn.globalProgress")}</span>
-              <span className="font-mono-data text-label-sm">{globalProgress.percentage}%</span>
+              <span className="font-mono-data text-label-sm">
+                {globalProgress.completed}/{globalProgress.total} {t("learn.lessonsCompleted")}
+              </span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-white/5">
-              <div className="h-full rounded-full bg-secondary" style={{ width: `${globalProgress.percentage}%` }} />
+              <div className="h-full rounded-full bg-metric" style={{ width: `${globalProgress.percentage}%` }} />
             </div>
           </GlassCard>
         </section>
@@ -449,12 +475,22 @@ export default function Learn() {
         <section className="px-container-padding pb-stack-lg">
           <div className="mb-stack-md flex items-center justify-between">
             <h2 className="font-title-md text-title-md">{t("learn.courseMap")}</h2>
-            <span className="text-label-sm text-on-surface-variant">{courseStates.length} {t("learn.courses")}</span>
           </div>
 
           <GlassCard className="overflow-hidden p-stack-md">
-            <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-              {courseStates.map((state, index) => {
+            {catalogLoading ? (
+              <div className="flex gap-2 overflow-hidden pb-2">
+                {[0, 1, 2].map((item) => (
+                  <div className="flex min-w-[92px] flex-col items-center gap-2" key={item}>
+                    <span className="h-14 w-14 animate-pulse rounded-full bg-surface-container-high" />
+                    <span className="h-8 w-20 animate-pulse rounded-lg bg-surface-container-high" />
+                    <span className="h-3 w-14 animate-pulse rounded-full bg-surface-container-high" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+                {courseStates.map((state, index) => {
                 const isActive = state.course.id === activeCourse?.id;
                 const statusLabel = state.completed
                   ? t("learn.completed")
@@ -473,7 +509,7 @@ export default function Learn() {
                         className={`flex h-14 w-14 items-center justify-center rounded-full border text-[13px] font-label-md transition-all active:scale-[0.96] ${isActive
                           ? "border-primary bg-primary text-on-primary shadow-lg shadow-primary/20"
                           : state.completed
-                            ? "border-secondary/60 bg-secondary/15 text-secondary"
+                            ? "border-metric/60 bg-metric/15 text-metric"
                             : state.unlocked
                               ? "border-primary/50 bg-primary/10 text-primary"
                               : "border-white/10 bg-surface-container-high text-on-surface-variant"
@@ -489,12 +525,13 @@ export default function Learn() {
                       <span className="text-[10px] uppercase text-on-surface-variant">{statusLabel}</span>
                     </button>
                     {index < courseStates.length - 1 && (
-                      <div className={`mt-7 h-px w-8 shrink-0 ${state.completed ? "bg-secondary" : "bg-white/10"}`} />
+                      <div className={`mt-7 h-px w-8 shrink-0 ${state.completed ? "bg-metric" : "bg-white/10"}`} />
                     )}
                   </div>
                 );
-              })}
-            </div>
+                })}
+              </div>
+            )}
           </GlassCard>
         </section>
 
@@ -522,7 +559,7 @@ export default function Learn() {
                 <p className="text-body-md text-on-surface-variant">{activeCourseState.course.description}</p>
                 <div className="mt-stack-md h-2 overflow-hidden rounded-full bg-white/5">
                   <div
-                    className="h-full rounded-full bg-secondary"
+                    className="h-full rounded-full bg-metric"
                     style={{ width: `${activeCourseState.courseProgress.percentage}%` }}
                   />
                 </div>
@@ -532,7 +569,7 @@ export default function Learn() {
                   </p>
                 )}
                 {pathCompleted && activeCourseState.completed && (
-                  <p className="mt-stack-md rounded-lg bg-secondary/10 p-3 text-label-sm text-secondary">
+                  <p className="mt-stack-md rounded-lg bg-metric/10 p-3 text-label-sm text-metric">
                     {t("learn.pathCompleted")}
                   </p>
                 )}
@@ -546,7 +583,7 @@ export default function Learn() {
             <section className="px-container-padding pb-stack-lg">
               <div className="mb-stack-md flex items-center justify-between">
                 <h2 className="font-title-md text-title-md">{t("learn.lessons")}</h2>
-                <span className="font-mono-data text-label-sm text-secondary">{activeCourseProgress?.percentage || 0}%</span>
+                <span className="font-mono-data text-label-sm text-metric">{activeCourseProgress?.percentage || 0}%</span>
               </div>
 
               <div className="grid gap-gutter">
@@ -635,7 +672,7 @@ export default function Learn() {
                                   <h3 className="font-title-md text-title-md">{t("learn.examForVideo")}</h3>
                                 </div>
                                 {completed && (
-                                  <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>
+                                  <span className="material-symbols-outlined text-metric" style={{ fontVariationSettings: "'FILL' 1" }}>
                                     verified
                                   </span>
                                 )}
@@ -675,7 +712,7 @@ export default function Learn() {
                                     {examFeedback[question.id] && (
                                       <div
                                         className={`mt-3 rounded-lg p-3 text-label-sm ${examFeedback[question.id].correct
-                                          ? "bg-secondary/10 text-secondary"
+                                          ? "bg-metric/10 text-metric"
                                           : "bg-error-container/30 text-on-error-container"
                                         }`}
                                       >
@@ -696,7 +733,7 @@ export default function Learn() {
                               {quizResult && (
                                 <div
                                   className={`mt-stack-md rounded-lg p-3 text-label-md ${quizResult === "correct"
-                                    ? "bg-secondary/10 text-secondary"
+                                    ? "bg-metric/10 text-metric"
                                     : "bg-error-container/30 text-on-error-container"
                                   }`}
                                 >

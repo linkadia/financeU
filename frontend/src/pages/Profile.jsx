@@ -209,7 +209,7 @@ export default function Profile() {
             )}
 
             {status && (
-              <div className="rounded-lg border border-secondary/30 bg-secondary/10 px-4 py-3 text-[14px] font-medium text-secondary" role="status">
+              <div className="rounded-lg border border-metric/30 bg-metric/10 px-4 py-3 text-[14px] font-medium text-metric" role="status">
                 {status}
               </div>
             )}

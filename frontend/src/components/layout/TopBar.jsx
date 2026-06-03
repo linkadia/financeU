@@ -1,5 +1,6 @@
 import React from 'react';
 import LanguageSwitcher from '../LanguageSwitcher';
+import logoUrl from '../../assets/logoFinancU.svg';
 
 export default function TopBar() {
   return (
@@ -8,7 +9,7 @@ export default function TopBar() {
         <img
           alt="FinanU"
           className="h-6 w-auto object-contain"
-          src="/src/assets/logoFinancU.svg"
+          src={logoUrl}
           width={50}
           height={50}
         />

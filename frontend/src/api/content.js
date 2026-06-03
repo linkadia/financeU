@@ -13,7 +13,7 @@ async function request(path) {
   return data;
 }
 
-export function getNewsArticles({ newsTypes = [], dateRange = '24h' } = {}) {
+export function getNewsArticles({ newsTypes = [], dateRange = '24h', page = 1, pageSize = 20 } = {}) {
   const params = new URLSearchParams();
 
   if (newsTypes.length > 0) {
@@ -23,6 +23,9 @@ export function getNewsArticles({ newsTypes = [], dateRange = '24h' } = {}) {
   if (dateRange) {
     params.set('date_range', dateRange);
   }
+
+  params.set('page', String(page));
+  params.set('page_size', String(pageSize));
 
   const query = params.toString();
   return request(`/content/news/${query ? `?${query}` : ''}`);

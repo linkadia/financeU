@@ -40,8 +40,7 @@ const FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=1200&q=80',
 ];
 
-const NEWS_PREVIEW_LIMIT = 20;
-const NEWS_LOAD_MORE_COUNT = 5;
+const NEWS_PAGE_SIZE = 20;
 const LEARNING_PROGRESS_STORAGE_KEY = 'finanu_learning_progress';
 const NEWS_DATE_RANGE_OPTIONS = [
   { id: '24h', labelKey: 'dashboard.newsRange24h' },
@@ -398,10 +397,12 @@ export default function Dashboard() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [news, setNews] = useState([]);
   const [isLoadingNews, setIsLoadingNews] = useState(true);
+  const [isLoadingMoreNews, setIsLoadingMoreNews] = useState(false);
   const [newsError, setNewsError] = useState('');
   const [newsSearchQuery, setNewsSearchQuery] = useState('');
   const [newsDateRange, setNewsDateRange] = useState('24h');
-  const [visibleNewsCount, setVisibleNewsCount] = useState(NEWS_PREVIEW_LIMIT);
+  const [newsPage, setNewsPage] = useState(1);
+  const [hasNextNewsPage, setHasNextNewsPage] = useState(false);
   const [learningProgress, setLearningProgress] = useState(loadLearningProgress);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [currentUser] = useState(() => getCurrentUser());
@@ -453,8 +454,8 @@ export default function Dashboard() {
 
     return searchableText.includes(normalizedNewsSearchQuery);
   });
-  const visibleNews = localizedNews.slice(0, visibleNewsCount);
-  const hasMoreNews = localizedNews.length > visibleNewsCount;
+  const visibleNews = localizedNews;
+  const hasMoreNews = hasNextNewsPage;
   const userNewsLevel = getUserNewsLevel(currentUser);
 
   useEffect(() => {
@@ -465,9 +466,16 @@ export default function Dashboard() {
       setNewsError('');
 
       try {
-        const data = await getNewsArticles({ newsTypes: allowedNewsTypes, dateRange: newsDateRange });
+        const data = await getNewsArticles({
+          newsTypes: allowedNewsTypes,
+          dateRange: newsDateRange,
+          page: 1,
+          pageSize: NEWS_PAGE_SIZE,
+        });
         if (isMounted) {
           setNews(Array.isArray(data) ? data : data.results ?? []);
+          setNewsPage(1);
+          setHasNextNewsPage(Boolean(data?.next));
         }
       } catch (error) {
         if (isMounted) {
@@ -488,7 +496,7 @@ export default function Dashboard() {
   }, [allowedNewsTypes, newsDateRange, t]);
 
   useEffect(() => {
-    setVisibleNewsCount(NEWS_PREVIEW_LIMIT);
+    setSelectedArticle(null);
   }, [activeCategory, language, newsSearchQuery, newsDateRange]);
 
   useEffect(() => {
@@ -512,8 +520,29 @@ export default function Dashboard() {
     navigate(`/learn?course=${learningPreview.course.id}&lesson=${learningPreview.lesson.id}`);
   };
 
-  const showMoreNews = () => {
-    setVisibleNewsCount((current) => Math.min(current + NEWS_LOAD_MORE_COUNT, localizedNews.length));
+  const showMoreNews = async () => {
+    if (isLoadingMoreNews || !hasNextNewsPage) return;
+
+    setIsLoadingMoreNews(true);
+    setNewsError('');
+
+    try {
+      const nextPage = newsPage + 1;
+      const data = await getNewsArticles({
+        newsTypes: allowedNewsTypes,
+        dateRange: newsDateRange,
+        page: nextPage,
+        pageSize: NEWS_PAGE_SIZE,
+      });
+      const rows = Array.isArray(data) ? data : data.results ?? [];
+      setNews((current) => [...current, ...rows]);
+      setNewsPage(nextPage);
+      setHasNextNewsPage(Boolean(data?.next));
+    } catch (error) {
+      setNewsError(translateApiError(error, t));
+    } finally {
+      setIsLoadingMoreNews(false);
+    }
   };
 
   return (
@@ -678,9 +707,10 @@ export default function Dashboard() {
               type="button"
               className="mx-auto flex items-center justify-center gap-2 rounded-full border border-[#f2ae2e]/50 bg-[#f2ae2e]/10 px-5 py-3 font-label-md text-label-md text-[#f2ae2e] shadow-[0_0_14px_rgba(242,174,46,0.12)] transition-all hover:border-[#f2ae2e] hover:bg-[#f2ae2e]/15 active:scale-[0.98]"
               onClick={showMoreNews}
+              disabled={isLoadingMoreNews}
             >
               <span className="material-symbols-outlined text-[18px]">expand_more</span>
-              {t('dashboard.viewMore')}
+              {isLoadingMoreNews ? t('dashboard.loadingNews') : t('dashboard.viewMore')}
             </button>
           )}
         </div>

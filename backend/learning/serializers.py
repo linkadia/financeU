@@ -62,11 +62,11 @@ class LessonQuizSerializer(serializers.ModelSerializer):
         ]
 
     def get_questions(self, quiz):
-        questions = list(quiz.questions.filter(is_active=True).order_by("order"))
+        questions = [question for question in quiz.questions.all() if question.is_active]
         if questions:
             return LessonQuizQuestionSerializer(questions, many=True).data
 
-        legacy_options = quiz.options.filter(question__isnull=True).order_by("order")
+        legacy_options = [option for option in quiz.options.all() if option.question_id is None]
         return [
             {
                 "id": f"legacy-{quiz.id}",

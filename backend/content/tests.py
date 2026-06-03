@@ -51,7 +51,7 @@ class NewsArticleViewSetTests(APITestCase):
         response = self.client.get("/api/content/news/")
 
         self.assertEqual(response.status_code, 200)
-        headlines = [item["headline"] for item in response.data]
+        headlines = [item["headline"] for item in response.data["results"]]
         self.assertEqual(headlines, ["Fresh story"])
 
     def test_news_can_include_all_dates(self):
@@ -61,7 +61,7 @@ class NewsArticleViewSetTests(APITestCase):
         response = self.client.get("/api/content/news/", {"date_range": "all"})
 
         self.assertEqual(response.status_code, 200)
-        headlines = [item["headline"] for item in response.data]
+        headlines = [item["headline"] for item in response.data["results"]]
         self.assertEqual(headlines, ["Fresh story", "Older story"])
 
 

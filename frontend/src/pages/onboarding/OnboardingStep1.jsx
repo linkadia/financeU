@@ -60,7 +60,7 @@ export default function OnboardingStep1() {
   };
 
   return (
-    <div className="bg-[#090A0D] text-on-surface min-h-screen flex flex-col" style={{ backgroundImage: 'radial-gradient(at 0% 0%, rgba(99, 241, 134, 0.15) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(255, 186, 60, 0.1) 0px, transparent 50%)' }}>
+    <div className="bg-[#090A0D] text-on-surface min-h-screen flex flex-col" style={{ backgroundImage: 'radial-gradient(at 0% 0%, rgba(255, 186, 60, 0.12) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(242, 174, 46, 0.08) 0px, transparent 50%)' }}>
       <OnboardingHeader currentStep={2} totalSteps={4} progressFraction="w-2/4" />
 
       <main data-scroll-root className="flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-y-auto px-container-padding mx-auto">

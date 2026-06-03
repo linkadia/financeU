@@ -2,9 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import LanguageSwitcher from '../LanguageSwitcher';
 import { useI18n } from '../../i18n/I18nContext';
-
-const LOGO_URL =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuBEVed2cAWQhnZmCYEo8c7WnwYIxlNA8zO2VYCdovKuhg8KE8xlG8sQc2GXEJnMN9ixwYTJD6kYNpQY5zWsG8phfAnIPEbAVRwXXhi7uF2IfyHaMDGbrS9cbxmQ1uKXP6_JVfyznFvUHS4BGbnL8Lj_2hsO94H0FvU3lASYXdyoEWPjreBt9DIb-X8ccHLAdA3bkAYarOgY9tIlEr69X5ypl3nQV1XMAKsFN-5xraYqqsprwwB8RJ_DjBwylcNmUSw_KIjXOL-fLu0L';
+import logoUrl from '../../assets/logoFinancU.svg';
 
 /**
  * Shared header for all onboarding steps.
@@ -28,7 +26,7 @@ export default function OnboardingHeader({ currentStep, totalSteps = 4, progress
       <header className="sticky top-0 z-50 mt-1 flex h-16 w-full items-center justify-between border-b border-white/10 bg-surface/80 px-container-padding backdrop-blur-xl">
         <div className="flex items-center">
           <img
-            src={LOGO_URL}
+            src={logoUrl}
             alt="FinanU Logo"
             className="h-6 md:h-8 object-contain"
           />

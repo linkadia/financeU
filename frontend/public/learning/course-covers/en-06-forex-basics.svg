@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Forex Basics</title>
+  <desc id="desc">Decorative learning course cover</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#19324d"/>
+      <stop offset="1" stop-color="#0b1020"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="76%" cy="28%" r="60%">
+      <stop offset="0" stop-color="#38bdf8" stop-opacity=".72"/>
+      <stop offset="1" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <rect width="1200" height="675" fill="url(#glow)"/>
+  <circle cx="1040" cy="110" r="230" fill="#38bdf8" opacity=".08"/>
+  <circle cx="135" cy="600" r="280" fill="#ffffff" opacity=".045"/>
+  <path d="M0 500 C180 420 300 610 520 520 S870 360 1200 455 V675 H0 Z" fill="#38bdf8" opacity=".16"/>
+  
+  <path d="M285 260 H870 Q955 260 955 345 Q955 430 870 430 H360" fill="none" stroke="#38bdf8" stroke-width="32" stroke-linecap="round"/>
+  <path d="M410 180 L285 260 L410 340 M830 350 L955 430 L830 510" fill="none" stroke="#38bdf8" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="430" cy="430" r="82" fill="#e0f2fe" opacity=".25"/>
+  <circle cx="760" cy="260" r="82" fill="#e0f2fe" opacity=".25"/>
+  <path d="M392 430 H468 M760 222 V298 M722 260 H798" stroke="#e0f2fe" stroke-width="18" stroke-linecap="round"/>
+
+</svg>

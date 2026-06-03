@@ -18,6 +18,14 @@ def env_bool(name, default=False):
 
 SECRET_KEY = getenv("DJANGO_SECRET_KEY", "dev-secret-key-change-in-production")
 DEBUG = getenv("DJANGO_DEBUG", "True").lower() == "true"
+DEFAULT_FROM_EMAIL = getenv("DEFAULT_FROM_EMAIL", "no-reply@finanu.local")
+EMAIL_BACKEND = getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = getenv("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(getenv("EMAIL_PORT", "25"))
+EMAIL_HOST_USER = getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", False)
+EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
 
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 
@@ -169,6 +177,7 @@ REST_FRAMEWORK = {
         "profiles": getenv("DRF_PROFILES_RATE", "120/minute"),
         "settings": getenv("DRF_SETTINGS_RATE", "30/hour"),
         "onboarding": getenv("DRF_ONBOARDING_RATE", "60/hour"),
+        "password_reset": getenv("DRF_PASSWORD_RESET_RATE", "5/hour"),
     },
     # Trust exactly one proxy/load balancer hop when resolving X-Forwarded-For.
     "NUM_PROXIES": int(getenv("DRF_NUM_PROXIES", "1")),

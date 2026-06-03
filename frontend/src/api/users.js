@@ -1,15 +1,8 @@
 import { defaultLanguage, translations } from '../i18n/translations';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api';
+import { apiRequest } from './client';
 
 async function request(path, options) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-    ...options,
-  });
+  const response = await apiRequest(path, options);
 
   const data = await response.json().catch(() => ({}));
 
@@ -30,6 +23,13 @@ export function loginUser({ identifier, username, password }) {
   return request('/users/login/', {
     method: 'POST',
     body: JSON.stringify({ identifier: identifier ?? username, password }),
+  });
+}
+
+export function requestPasswordReset({ email }) {
+  return request('/users/password-reset/', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
   });
 }
 

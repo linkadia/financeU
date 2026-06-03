@@ -43,6 +43,13 @@ const FALLBACK_IMAGES = [
 const NEWS_PREVIEW_LIMIT = 20;
 const NEWS_LOAD_MORE_COUNT = 5;
 const LEARNING_PROGRESS_STORAGE_KEY = 'finanu_learning_progress';
+const NEWS_DATE_RANGE_OPTIONS = [
+  { id: '24h', labelKey: 'dashboard.newsRange24h' },
+  { id: 'week', labelKey: 'dashboard.newsRangeWeek' },
+  { id: 'month', labelKey: 'dashboard.newsRangeMonth' },
+  { id: 'year', labelKey: 'dashboard.newsRangeYear' },
+  { id: 'all', labelKey: 'dashboard.newsRangeAll' },
+];
 
 function mapUserInterestsToNewsTypes(interests = []) {
   return interests.map((interest) => INTEREST_TO_NEWS_TYPE[interest]).filter(Boolean);
@@ -70,6 +77,7 @@ function getImportanceTone(score) {
       dot: 'bg-error',
       ring: 'border-error/50 bg-error/15 text-error',
       labelKey: 'dashboard.highImportance',
+      noteKey: 'dashboard.highImportanceNote',
     };
   }
 
@@ -78,13 +86,15 @@ function getImportanceTone(score) {
       dot: 'bg-secondary',
       ring: 'border-secondary/50 bg-secondary/15 text-secondary',
       labelKey: 'dashboard.mediumImportance',
+      noteKey: 'dashboard.mediumImportanceNote',
     };
   }
 
   return {
-    dot: 'bg-primary',
-    ring: 'border-primary/50 bg-primary/15 text-primary',
+    dot: 'bg-on-surface-variant',
+    ring: 'border-white/10 bg-white/5 text-on-surface-variant',
     labelKey: 'dashboard.lowImportance',
+    noteKey: 'dashboard.lowImportanceNote',
   };
 }
 
@@ -180,10 +190,11 @@ function NewsCard({ article, language, onOpen, t }) {
             <span className="inline-flex items-center gap-1 rounded-full bg-surface/90 px-3 py-1 font-label-sm text-label-sm text-on-surface backdrop-blur">
               <span className="material-symbols-outlined text-[16px]">{NEWS_TYPE_ICON[article.news_type]}</span>
               {t(NEWS_TYPE_LABEL_KEYS[article.news_type] ?? 'dashboard.market')}
-            </span>
-            <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 font-label-sm text-label-sm backdrop-blur ${importance.ring}`}>
-              <span className={`h-2 w-2 rounded-full ${importance.dot}`}></span>
-              {t(importance.labelKey)}
+              <span
+                className={`ml-1 h-2 w-2 shrink-0 rounded-full ${importance.dot}`}
+                aria-label={`${t('dashboard.importance')}: ${t(importance.labelKey)}`}
+                title={`${t('dashboard.importance')}: ${t(importance.labelKey)}`}
+              ></span>
             </span>
           </div>
         </div>
@@ -303,10 +314,6 @@ function NewsDetailModal({ article, language, onClose, t, userLevel }) {
               <span className="material-symbols-outlined text-[16px]">{NEWS_TYPE_ICON[article.news_type]}</span>
               {t(NEWS_TYPE_LABEL_KEYS[article.news_type] ?? 'dashboard.market')}
             </span>
-            <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 font-label-sm text-label-sm backdrop-blur ${importance.ring}`}>
-              <span className={`h-2 w-2 rounded-full ${importance.dot}`}></span>
-              {t(importance.labelKey)}
-            </span>
           </div>
         </div>
 
@@ -335,6 +342,21 @@ function NewsDetailModal({ article, language, onClose, t, userLevel }) {
             </p>
             <p className="whitespace-pre-line font-body-md text-body-md leading-relaxed text-on-surface">
               {summary}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-surface-container/70 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-label-md text-label-md uppercase text-on-surface-variant">
+                {t('dashboard.importance')}
+              </p>
+              <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 font-label-sm text-label-sm ${importance.ring}`}>
+                <span className={`h-2 w-2 rounded-full ${importance.dot}`}></span>
+                {t(importance.labelKey)}
+              </span>
+            </div>
+            <p className="mt-2 font-label-sm text-label-sm text-on-surface-variant">
+              {t(importance.noteKey)}
             </p>
           </div>
 
@@ -378,6 +400,7 @@ export default function Dashboard() {
   const [isLoadingNews, setIsLoadingNews] = useState(true);
   const [newsError, setNewsError] = useState('');
   const [newsSearchQuery, setNewsSearchQuery] = useState('');
+  const [newsDateRange, setNewsDateRange] = useState('24h');
   const [visibleNewsCount, setVisibleNewsCount] = useState(NEWS_PREVIEW_LIMIT);
   const [learningProgress, setLearningProgress] = useState(loadLearningProgress);
   const [selectedArticle, setSelectedArticle] = useState(null);
@@ -442,7 +465,7 @@ export default function Dashboard() {
       setNewsError('');
 
       try {
-        const data = await getNewsArticles({ newsTypes: allowedNewsTypes });
+        const data = await getNewsArticles({ newsTypes: allowedNewsTypes, dateRange: newsDateRange });
         if (isMounted) {
           setNews(Array.isArray(data) ? data : data.results ?? []);
         }
@@ -462,11 +485,11 @@ export default function Dashboard() {
     return () => {
       isMounted = false;
     };
-  }, [allowedNewsTypes, t]);
+  }, [allowedNewsTypes, newsDateRange, t]);
 
   useEffect(() => {
     setVisibleNewsCount(NEWS_PREVIEW_LIMIT);
-  }, [activeCategory, language, newsSearchQuery]);
+  }, [activeCategory, language, newsSearchQuery, newsDateRange]);
 
   useEffect(() => {
     const refreshLearningProgress = () => setLearningProgress(loadLearningProgress());
@@ -535,13 +558,13 @@ export default function Dashboard() {
                     <span className="font-label-sm text-label-sm text-on-surface-variant">
                       {learningPreview.courseProgress.completed}/{learningPreview.courseProgress.total} {t('learn.lessonsCompleted')}
                     </span>
-                    <span className="font-mono-data text-label-sm text-secondary">
+                    <span className="font-mono-data text-label-sm text-metric">
                       {learningPreview.courseProgress.percentage}%
                     </span>
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
                     <div
-                      className="h-full rounded-full bg-secondary"
+                      className="h-full rounded-full bg-metric"
                       style={{ width: `${learningPreview.courseProgress.percentage}%` }}
                     ></div>
                   </div>
@@ -595,6 +618,32 @@ export default function Dashboard() {
             userInterests={currentUser?.onboarding_interests ?? []}
             searchQuery={newsSearchQuery}
           />
+
+          <div className="flex items-center justify-between gap-3">
+            <p className="font-label-sm text-label-sm uppercase text-on-surface-variant">
+              {t('dashboard.newsDateRange')}
+            </p>
+            <label className="relative shrink-0">
+              <span className="sr-only">{t('dashboard.newsDateRange')}</span>
+              <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-secondary">
+                calendar_today
+              </span>
+              <select
+                className="appearance-none rounded-full border border-white/10 bg-surface-container-high py-2 pl-9 pr-9 font-label-md text-label-md text-on-surface outline-none transition-colors hover:border-white/20 focus:border-[#f2ae2e]/70 focus:ring-2 focus:ring-[#f2ae2e]/20"
+                value={newsDateRange}
+                onChange={(event) => setNewsDateRange(event.target.value)}
+              >
+                {NEWS_DATE_RANGE_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {t(option.labelKey)}
+                  </option>
+                ))}
+              </select>
+              <span className="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant">
+                expand_more
+              </span>
+            </label>
+          </div>
 
           {isLoadingNews && (
             <GlassCard className="p-6 text-center font-body-md text-body-md text-on-surface-variant">

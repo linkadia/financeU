@@ -19,7 +19,7 @@ export default function SelectAgent() {
       level: t('onboarding.noviceIntermediate'),
       description: t('onboarding.agentFinnDescription'),
       accentColor: 'primary',
-      accentHex: '#63f186',
+      accentHex: '#ffcf83',
       gradientClass: 'from-primary/10 to-transparent',
       bgIcon: 'school',
     },

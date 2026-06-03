@@ -20,8 +20,8 @@ const FEED_FILTER_TO_MARKET_CATEGORY = {
 const DIRECTION_STYLES = {
   UP: {
     icon: 'trending_up',
-    tone: 'border-secondary/30 bg-secondary/10 text-secondary',
-    text: 'text-secondary',
+    tone: 'border-metric/30 bg-metric/10 text-metric',
+    text: 'text-metric',
   },
   DOWN: {
     icon: 'trending_down',

@@ -4,20 +4,29 @@ FinanU es una aplicación mobile-first de educación financiera con onboarding p
 
 El idioma principal de la aplicación es polaco. También incluye inglés y un selector de idioma persistente para que el usuario cambie entre `PL` y `EN`.
 
-## Estado Actual
+## Documentacion Funcional
+
+### Estado Actual
 
 - Frontend funcional en React + Vite.
-- Backend Django REST con endpoints para usuarios, onboarding, ajustes, contenido, mercados y suscripciones.
-- Catálogo Learning avanzado modelado en backend, con fixtures iniciales y lógica de progreso, pendiente de exponer como API pública.
-- La pantalla principal de aprendizaje del frontend usa datos locales traducidos y guarda progreso en `localStorage`.
-- Autenticación simplificada con `UserProfile`, contraseña hasheada y sesión guardada en navegador.
+- Backend Django REST con endpoints para usuarios, onboarding, ajustes, noticias, catalogo Learning, progreso y datos de mercado.
+- Modelo de datos backend consolidado en `users`, `content`, `learning` y `marketdata`.
+- Los modelos legacy vacios `content.Article`, `content.Course`, `content.Lesson`, `markets.MarketAsset`, `markets.Signal` y `subscriptions.Subscription` han sido eliminados mediante migraciones.
+- La app `content` conserva solo `NewsArticle`, usado por el feed de noticias y el importador RSS.
+- La pantalla principal de aprendizaje consume el catalogo `learning` del backend y puede caer a datos locales traducidos como fallback.
+- El progreso de aprendizaje se sincroniza con backend cuando hay usuario y se conserva localmente como respaldo de UX.
+- Autenticación simplificada con `UserProfile`, contraseña hasheada, recuperacion por contraseña temporal y sesión guardada en navegador.
+- Los endpoints sensibles de usuarios tienen throttling basico por scope/IP.
 
-## Funcionalidad de Producto
+### Funcionalidad de Producto
 
 ### Autenticación
 
 - Registro con usuario, email, contraseña y confirmación.
 - Login con usuario o email.
+- Recuperacion de contraseña mediante generacion de contraseña temporal:
+  - en desarrollo se devuelve en la respuesta para facilitar pruebas;
+  - en produccion se envia por email y no se expone en la respuesta.
 - Redirección automática según estado de onboarding:
   - usuario nuevo: onboarding;
   - usuario con onboarding completo: dashboard.
@@ -129,9 +138,11 @@ Igual que el carrusel de mercado, este proceso no da asesoramiento financiero. R
 - Catálogo de cursos con filtros por tema, nivel y formato.
 - Cursos con vídeo embebido de YouTube.
 - Lecciones con resumen, duración y quiz.
-- Progreso global y por curso.
+- Progreso global, por curso y por lección.
+- Bloqueo secuencial de cursos y lecciones para guiar la ruta de aprendizaje.
 - Una lección se completa solo al responder correctamente su quiz.
-- El progreso actual del frontend se guarda localmente en `localStorage`.
+- Si hay usuario autenticado, el progreso se consulta en `/api/learning/progress/` y se actualiza en `/api/learning/lessons/{lesson_id}/submit/`.
+- `localStorage` conserva `finanu_learning_progress` como fallback y para mantener una experiencia fluida si la API no responde.
 
 ### Perfil y Ajustes
 
@@ -142,6 +153,7 @@ Igual que el carrusel de mercado, este proceso no da asesoramiento financiero. R
   - objetivo principal;
   - companion AI.
 - Cambio de contraseña solicitando contraseña actual.
+- Recuperacion de acceso desde login mediante email.
 - Cierre de sesión.
 
 ### Multiidioma
@@ -155,6 +167,8 @@ Igual que el carrusel de mercado, este proceso no da asesoramiento financiero. R
   - `frontend/src/data/localizedDashboard.js`;
   - `frontend/src/data/localizedCourses.js`.
 
+## Documentacion Tecnica
+
 ## Arquitectura
 
 ```text
@@ -162,10 +176,11 @@ finanU/
   backend/
     finanu_backend/      Configuración Django y urls raíz
     users/               Perfiles, login, onboarding y settings
-    content/             Artículos, cursos simples y lecciones simples
-    markets/             Activos y señales
-    subscriptions/       Suscripciones
-    learning/            Modelo avanzado de cursos, quizzes y progreso
+    content/             Noticias financieras interpretadas (`NewsArticle`)
+    learning/            Catalogo, cursos, lecciones, quizzes y progreso
+    marketdata/          Productos financieros, snapshots y runs de actualizacion
+    markets/             App legacy sin modelos; conserva migraciones de borrado
+    subscriptions/       App legacy sin modelos; conserva migraciones de borrado
   frontend/
     src/
       api/               Cliente API
@@ -177,6 +192,26 @@ finanU/
       utils/             Gestión de sesión
 ```
 
+## Modelo de Datos Backend
+
+El modelo definitivo del backend queda centrado en cuatro dominios activos:
+
+- `users.UserProfile`: identidad de usuario, login simplificado, estado de acceso, fecha de renovacion, preferencias de onboarding y companion seleccionado.
+- `content.NewsArticle`: noticias importadas desde RSS, resumidas y clasificadas para el feed educativo. Incluye traducciones, dificultad, tipo de noticia, importancia, fuentes, tags, activos mencionados y estado editorial.
+- `learning`: catalogo educativo completo. Incluye `LearningCategory`, `CourseType`, `LearningLevel`, `Course`, `Lesson`, `LessonQuiz`, `LessonQuizQuestion`, `LessonQuizOption`, `UserLessonProgress` y `UserCourseProgress`.
+- `marketdata`: datos del carrusel de mercado. Incluye `FinancialProduct`, `FinancialProductSnapshot` y `FinancialDataRun`.
+
+Modelos legacy eliminados:
+
+- `content.Article`
+- `content.Course`
+- `content.Lesson`
+- `markets.MarketAsset`
+- `markets.Signal`
+- `subscriptions.Subscription`
+
+Las apps `markets` y `subscriptions` quedan sin modelos ni endpoints. Se mantienen registradas temporalmente para que sus migraciones de borrado puedan ejecutarse en todos los entornos. Cuando produccion y staging hayan aplicado esas migraciones, se pueden retirar por completo de `INSTALLED_APPS` y del repositorio.
+
 ## Stack Técnico
 
 ### Frontend
@@ -187,10 +222,11 @@ finanU/
 - Material UI para rutas legacy y algunos componentes base.
 - Tailwind-style utility classes ya presentes en las pantallas Stitch.
 - i18n propio sin dependencia externa.
+- Cliente API con timeout y fallback automatico para peticiones `GET`/`HEAD`.
 - Persistencia local:
   - `finanu.language`: idioma seleccionado.
   - sesión de usuario en utilidades de `frontend/src/utils/session.js`.
-  - `finanu_learning_progress`: progreso de aprendizaje.
+  - `finanu_learning_progress`: progreso de aprendizaje como respaldo local.
 
 ### Backend
 
@@ -200,6 +236,7 @@ finanU/
 - python-dotenv.
 - SQLite en desarrollo.
 - MySQL preparado para produccion mediante variables de entorno.
+- Cache local en desarrollo y Redis opcional en produccion para compartir throttling entre workers.
 - Gunicorn + Docker preparados para hosting.
 
 ## Instalación
@@ -282,6 +319,9 @@ DJANGO_SESSION_COOKIE_SECURE=False
 DJANGO_SECURE_SSL_REDIRECT=False
 DB_ENGINE=sqlite
 SQLITE_NAME=db.sqlite3
+REDIS_URL=
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+DEFAULT_FROM_EMAIL=no-reply@finanu.local
 ```
 
 Para actualizar el carrusel de mercado con Gemini y Google Search grounding:
@@ -318,9 +358,13 @@ Notas:
 
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8001/api
+VITE_API_FALLBACK_BASE_URLS=http://127.0.0.1:8000/api,http://localhost:8001/api,http://localhost:8000/api
+VITE_API_TIMEOUT_MS=5000
 ```
 
-## Preparacion para Despliegue
+## Proximos pasos para servidor, hosting y despliegue
+
+### Preparacion para Despliegue
 
 El desarrollo local sigue usando SQLite por defecto. No hace falta Docker para probar en tu PC:
 
@@ -355,6 +399,14 @@ DB_PASSWORD=replace-with-real-password
 DB_HOST=replace-with-rds-endpoint.amazonaws.com
 DB_PORT=3306
 DB_CONN_MAX_AGE=60
+REDIS_URL=redis://replace-with-redis-endpoint:6379/1
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=replace-with-smtp-host
+EMAIL_PORT=587
+EMAIL_HOST_USER=replace-with-smtp-user
+EMAIL_HOST_PASSWORD=replace-with-smtp-password
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL=no-reply@tudominio.com
 ```
 
 No subir `backend/.env.production` al repositorio. Las credenciales reales deben vivir en variables del hosting, AWS Secrets Manager, Parameter Store o un fichero `.env` local no versionado.
@@ -608,7 +660,8 @@ Backend:
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver 8001
-python manage.py loaddata initial_learning_data
+python manage.py seed_learning_catalog
+python manage.py seed_learning_content  # alias de seed_learning_catalog
 python manage.py seed_financial_products
 python manage.py refresh_market_data_llm --dry-run --output market_latest.json
 python manage.py refresh_market_data_llm
@@ -628,6 +681,7 @@ Base URL:
 
 ```text
 POST   /api/users/login/
+POST   /api/users/password-reset/
 GET    /api/users/profiles/
 POST   /api/users/profiles/
 GET    /api/users/profiles/{id}/
@@ -646,6 +700,16 @@ Login acepta:
 }
 ```
 
+Recuperacion de contraseña acepta:
+
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+En `DEBUG=True` devuelve `temporary_password`. En produccion genera la contraseña temporal y la envia por email sin exponerla en la respuesta.
+
 Completar onboarding acepta:
 
 ```json
@@ -660,27 +724,69 @@ Completar onboarding acepta:
 ### Content
 
 ```text
-GET/POST/PATCH/DELETE /api/content/articles/
-GET/POST/PATCH/DELETE /api/content/courses/
-GET/POST/PATCH/DELETE /api/content/lessons/
+GET/POST/PATCH/DELETE /api/content/news/
 ```
 
-### Markets
+`/api/content/news/` expone `NewsArticle`. El frontend lo consume para el feed del dashboard y permite filtrar por `news_type`:
 
 ```text
-GET/POST/PATCH/DELETE /api/markets/assets/
-GET/POST/PATCH/DELETE /api/markets/signals/
+GET /api/content/news/?news_type=crypto,stock_market
 ```
 
-### Subscriptions
+Los antiguos endpoints `/api/content/articles/`, `/api/content/courses/` y `/api/content/lessons/` fueron retirados junto con sus modelos legacy.
+
+### Marketdata
 
 ```text
-GET/POST/PATCH/DELETE /api/subscriptions/
+GET /api/market/products/
+GET /api/market/snapshots/latest/
+GET /api/market/snapshots/latest/?featured=true&category=CRYPTO&lang=pl
+GET /api/market/products/{slug}/history/
+```
+
+`marketdata` sustituye a la antigua app `markets`. No gestiona senales de compra/venta: mantiene productos financieros y snapshots educativos para el carrusel.
+
+Modelos principales:
+
+- `FinancialProduct`.
+- `FinancialProductSnapshot`.
+- `FinancialDataRun`.
+
+Los productos base se cargan con:
+
+```bash
+python manage.py seed_financial_products
+```
+
+Los valores se refrescan con:
+
+```bash
+python manage.py refresh_market_data_llm
 ```
 
 ### Learning
 
-El módulo `learning` contiene modelos completos para catálogo, lecciones, quizzes y progreso. Actualmente no está enlazado en `finanu_backend/urls.py`, por lo que no expone endpoints REST públicos todavía.
+```text
+GET /api/learning/catalog/
+GET /api/learning/catalog/catalog/?language=en
+GET /api/learning/catalog/catalog/?language=pl&user_id={user_id}
+GET /api/learning/progress/?user_id={user_id}
+POST /api/learning/lessons/{lesson_id}/submit/
+```
+
+`learning` expone el catalogo activo por idioma, filtros por categoria/nivel, progreso por usuario y envio de respuestas de quiz. Una leccion solo queda completada si todas las preguntas activas se responden correctamente.
+
+Enviar respuestas de quiz acepta:
+
+```json
+{
+  "user_id": 1,
+  "answers": {
+    "10": "42",
+    "11": "45"
+  }
+}
+```
 
 Modelos principales:
 
@@ -690,14 +796,30 @@ Modelos principales:
 - `Course`.
 - `Lesson`.
 - `LessonQuiz`.
+- `LessonQuizQuestion`.
 - `LessonQuizOption`.
 - `UserLessonProgress`.
 - `UserCourseProgress`.
 
-El fixture inicial se carga con:
+El catalogo inicial se carga o actualiza con:
 
 ```bash
-python manage.py loaddata initial_learning_data
+python manage.py seed_learning_catalog
+```
+
+`seed_learning_content` sigue disponible como alias del mismo comando.
+
+### Endpoints retirados
+
+Estos endpoints ya no forman parte del backend activo:
+
+```text
+/api/markets/assets/
+/api/markets/signals/
+/api/subscriptions/
+/api/content/articles/
+/api/content/courses/
+/api/content/lessons/
 ```
 
 ## Guía de Usuario
@@ -732,17 +854,19 @@ python manage.py loaddata initial_learning_data
 - `OnboardingProvider`: mantiene el borrador del onboarding durante el flujo.
 - `session.js`: encapsula lectura/escritura de usuario actual.
 - `api/users.js`: cliente HTTP para login, registro, onboarding y settings.
-- ViewSets DRF: CRUD estándar para recursos de contenido, mercados y suscripciones.
+- ViewSets/APIViews DRF: endpoints para usuarios, noticias, catalogo Learning, progreso y datos de mercado.
 - Password hashing: las contraseñas se guardan hasheadas con utilidades de Django.
 - CORS: configurado por variables de entorno para desarrollo local y red local.
+- Throttling DRF: scopes para login, signup, perfiles, settings, onboarding y recuperacion de contraseña.
+- Redis opcional: recomendado en produccion si hay mas de un worker/instancia para compartir contadores de throttle.
 
 ## Limitaciones Conocidas
 
 - La autenticación es simple y no usa JWT ni sesiones server-side.
-- Learning en backend está modelado, pero el frontend actual usa datos locales traducidos.
-- Las noticias y cursos visibles en frontend son contenido mock/localizado.
+- Learning sincroniza progreso con backend cuando hay usuario; el frontend mantiene datos locales como fallback.
+- El feed de noticias y el carrusel de mercado dependen de imports/jobs para mantenerse frescos.
 - Algunos módulos backend exponen CRUD abierto porque DRF está configurado con `AllowAny`.
-- No hay suite de tests automatizados todavía.
+- Hay tests backend para usuarios, noticias, learning y marketdata, pero falta ampliar cobertura frontend/e2e y permisos por usuario.
 
 ## Verificación
 
@@ -763,10 +887,12 @@ python manage.py migrate
 
 ## Roadmap Sugerido
 
-- Conectar el módulo `learning` del backend al frontend.
+- Reforzar permisos y ownership en los endpoints de `learning`.
 - Añadir autenticación real con tokens.
-- Añadir permisos por usuario en settings, progreso y suscripciones.
-- Migrar contenido mock a endpoints REST.
-- Añadir tests unitarios e integración.
+- Añadir permisos por usuario en settings y progreso.
+- Configurar email real para recuperacion de contraseña antes de produccion.
+- Configurar Redis si el backend se despliega con varios workers o instancias.
+- Retirar definitivamente las apps legacy `markets` y `subscriptions` cuando todos los entornos hayan aplicado sus migraciones de borrado.
+- Ampliar tests de integración y añadir cobertura frontend/e2e.
 - Internacionalizar respuestas de error del backend.
 - Añadir panel admin editorial para noticias, cursos y quizzes.

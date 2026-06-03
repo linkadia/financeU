@@ -24,8 +24,17 @@ class LearningSeedTests(TestCase):
         call_command("seed_learning_content", verbosity=0)
 
         self.assertEqual(first_counts, (Course.objects.count(), Lesson.objects.count(), LessonQuiz.objects.count()))
-        self.assertTrue(Course.objects.filter(language="en", external_url__icontains="khanacademy.org").exists())
-        self.assertTrue(Course.objects.filter(language="pl", external_url__icontains="nbp.pl").exists())
+        self.assertEqual(Course.objects.filter(language="en", is_active=True).count(), 6)
+        self.assertEqual(Course.objects.filter(language="pl", is_active=True).count(), 5)
+        self.assertTrue(Lesson.objects.filter(content_language="en", external_url__icontains="khanacademy.org").exists())
+        self.assertTrue(Lesson.objects.filter(content_language="pl", external_url__icontains="nbp.pl").exists())
+
+    def test_seed_groups_external_resources_into_complete_courses(self):
+        investing = Course.objects.get(slug="en-investing-foundations")
+        polish_safety = Course.objects.get(slug="pl-bezpieczenstwo-finansowe-i-konsument")
+
+        self.assertEqual(investing.lessons.filter(is_active=True).count(), 2)
+        self.assertEqual(polish_safety.lessons.filter(is_active=True).count(), 4)
 
     def test_each_seeded_lesson_has_required_three_question_quiz(self):
         for lesson in Lesson.objects.select_related("quiz").filter(external_url__gt=""):

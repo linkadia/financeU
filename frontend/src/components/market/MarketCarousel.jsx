@@ -17,6 +17,8 @@ const FEED_FILTER_TO_MARKET_CATEGORY = {
   investing_basics: 'GENERAL',
 };
 
+const MARKET_CATEGORY_ORDER = ['CRYPTO', 'INDEX', 'FOREX', 'GENERAL'];
+
 const DIRECTION_STYLES = {
   UP: {
     icon: 'trending_up',
@@ -79,6 +81,44 @@ function marketItemMatchesSearch(item, searchQuery, lang) {
     .toLocaleLowerCase(lang === 'pl' ? 'pl-PL' : 'en-US');
 
   return searchableText.includes(query);
+}
+
+function getMarketCategoryRank(category) {
+  const rank = MARKET_CATEGORY_ORDER.indexOf(category);
+  return rank === -1 ? MARKET_CATEGORY_ORDER.length : rank;
+}
+
+function getMarketSortTimestamp(item) {
+  const raw = item.effective_datetime || item.effective_date || item.effective_at_raw;
+  if (!raw) return Number.NEGATIVE_INFINITY;
+
+  if (/^\d{4}-Q[1-4]$/.test(raw)) {
+    const [year, quarter] = raw.split('-Q');
+    return Date.UTC(Number(year), (Number(quarter) - 1) * 3, 1);
+  }
+
+  if (/^\d{4}-\d{2}$/.test(raw)) {
+    const [year, month] = raw.split('-');
+    return Date.UTC(Number(year), Number(month) - 1, 1);
+  }
+
+  const timestamp = Date.parse(raw);
+  return Number.isNaN(timestamp) ? Number.NEGATIVE_INFINITY : timestamp;
+}
+
+function sortMarketRows(rows) {
+  return [...rows].sort((a, b) => {
+    const categoryDiff = getMarketCategoryRank(a.category) - getMarketCategoryRank(b.category);
+    if (categoryDiff !== 0) return categoryDiff;
+
+    const dateDiff = getMarketSortTimestamp(b) - getMarketSortTimestamp(a);
+    if (dateDiff !== 0) return dateDiff;
+
+    const displayDiff = (a.display_order ?? 0) - (b.display_order ?? 0);
+    if (displayDiff !== 0) return displayDiff;
+
+    return String(a.symbol ?? '').localeCompare(String(b.symbol ?? ''));
+  });
 }
 
 function formatNumber(value, item, lang) {
@@ -381,7 +421,7 @@ export default function MarketCarousel({ lang, selectedFeedFilter, userInterests
         const filteredRows = selectedCategory
           ? rows
           : rows.filter((row) => categories.includes(row.category));
-        const sortedRows = [...filteredRows].sort((a, b) => a.display_order - b.display_order);
+        const sortedRows = sortMarketRows(filteredRows);
 
         if (isMounted) {
           setItems(sortedRows);

@@ -11,6 +11,7 @@ from .models import (
     UserCourseProgress,
     UserLessonProgress,
 )
+from .serializers import CourseSerializer, stable_option_sort_key
 
 
 class LearningSeedTests(TestCase):
@@ -44,6 +45,33 @@ class LearningSeedTests(TestCase):
             for question in lesson.quiz.questions.all():
                 self.assertEqual(question.options.count(), 3)
                 self.assertEqual(question.options.filter(is_correct=True).count(), 1)
+
+    def test_catalog_serializes_quiz_options_in_stable_mixed_order(self):
+        course = Course.objects.prefetch_related("lessons__quiz__questions__options").filter(language="en").first()
+        serialized_course = CourseSerializer(course).data
+        question = course.lessons.first().quiz.questions.first()
+        serialized_question = serialized_course["lessons"][0]["quiz"]["questions"][0]
+        expected_option_ids = [
+            option.id
+            for option in sorted(
+                question.options.all(),
+                key=lambda option: stable_option_sort_key(question.id, option.id),
+            )
+        ]
+
+        self.assertEqual([option["id"] for option in serialized_question["options"]], expected_option_ids)
+
+        correct_positions = []
+        for serialized_lesson, lesson in zip(serialized_course["lessons"], course.lessons.all()):
+            for serialized_question, question in zip(
+                serialized_lesson["quiz"]["questions"],
+                lesson.quiz.questions.all(),
+            ):
+                correct_option = question.options.get(is_correct=True)
+                serialized_option_ids = [option["id"] for option in serialized_question["options"]]
+                correct_positions.append(serialized_option_ids.index(correct_option.id))
+
+        self.assertTrue(any(position > 0 for position in correct_positions))
 
     def test_catalog_can_filter_by_language_category_and_level(self):
         queryset = Course.objects.filter(language="pl", category__slug="crypto", level__slug="beginner")

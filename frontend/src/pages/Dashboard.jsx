@@ -6,7 +6,8 @@ import GlassCard from '../components/ui/GlassCard';
 import CategoryChips from '../components/ui/CategoryChips';
 import MarketCarousel from '../components/market/MarketCarousel';
 import { getNewsArticles } from '../api/content';
-import { getCourses } from '../data/localizedCourses';
+import { getLearningCatalog, getLearningProgress } from '../api/learning';
+import { getCourses as getLocalCourses } from '../data/localizedCourses';
 import { useI18n } from '../i18n/I18nContext';
 import { translateApiError } from '../utils/apiErrors';
 import { getCurrentUser } from '../utils/session';
@@ -129,7 +130,10 @@ function loadLearningProgress() {
 
 function getCourseProgress(course, progress) {
   const activeLessons = course.lessons.filter((lesson) => lesson.is_active);
-  const completed = activeLessons.filter((lesson) => progress[lesson.id]?.status === 'completed').length;
+  const completed = activeLessons.filter((lesson) => {
+    const entry = progress[lesson.id] || progress[String(lesson.id)] || {};
+    return entry.status === 'completed';
+  }).length;
   const total = activeLessons.length;
 
   return {
@@ -148,8 +152,14 @@ function getLearningPreview(courses, progress) {
   );
 
   const currentLearning =
-    activeLessons.find(({ lesson }) => progress[lesson.id]?.status === 'in_progress') ||
-    activeLessons.find(({ lesson }) => progress[lesson.id]?.status !== 'completed') ||
+    activeLessons.find(({ lesson }) => {
+      const entry = progress[lesson.id] || progress[String(lesson.id)] || {};
+      return entry.status === 'in_progress';
+    }) ||
+    activeLessons.find(({ lesson }) => {
+      const entry = progress[lesson.id] || progress[String(lesson.id)] || {};
+      return entry.status !== 'completed';
+    }) ||
     activeLessons[0];
 
   if (!currentLearning) return null;
@@ -404,9 +414,10 @@ export default function Dashboard() {
   const [newsPage, setNewsPage] = useState(1);
   const [hasNextNewsPage, setHasNextNewsPage] = useState(false);
   const [learningProgress, setLearningProgress] = useState(loadLearningProgress);
+  const [courses, setCourses] = useState([]);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [currentUser] = useState(() => getCurrentUser());
-  const courses = useMemo(() => getCourses(language), [language]);
+  const localCourses = useMemo(() => getLocalCourses(language), [language]);
   const allowedNewsTypes = useMemo(
     () => mapUserInterestsToNewsTypes(currentUser?.onboarding_interests),
     [currentUser?.onboarding_interests]
@@ -496,20 +507,73 @@ export default function Dashboard() {
   }, [allowedNewsTypes, newsDateRange, t]);
 
   useEffect(() => {
+    let isMounted = true;
+
+    async function loadLearningData() {
+      try {
+        const [catalog, progressData] = await Promise.all([
+          getLearningCatalog(language),
+          currentUser?.id ? getLearningProgress(currentUser.id) : Promise.resolve(null),
+        ]);
+
+        if (!isMounted) return;
+
+        setCourses(Array.isArray(catalog) && catalog.length > 0 ? catalog : localCourses);
+
+        if (progressData?.lessons) {
+          setLearningProgress(progressData.lessons);
+          localStorage.setItem(LEARNING_PROGRESS_STORAGE_KEY, JSON.stringify(progressData.lessons));
+        }
+      } catch {
+        if (isMounted) {
+          setCourses(localCourses);
+          setLearningProgress(loadLearningProgress());
+        }
+      }
+    }
+
+    loadLearningData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser?.id, language, localCourses]);
+
+  useEffect(() => {
     setSelectedArticle(null);
   }, [activeCategory, language, newsSearchQuery, newsDateRange]);
 
   useEffect(() => {
-    const refreshLearningProgress = () => setLearningProgress(loadLearningProgress());
+    let isMounted = true;
+
+    const refreshLearningProgress = async () => {
+      if (!currentUser?.id) {
+        setLearningProgress(loadLearningProgress());
+        return;
+      }
+
+      try {
+        const data = await getLearningProgress(currentUser.id);
+        if (isMounted && data?.lessons) {
+          setLearningProgress(data.lessons);
+          localStorage.setItem(LEARNING_PROGRESS_STORAGE_KEY, JSON.stringify(data.lessons));
+        }
+      } catch {
+        if (isMounted) {
+          setLearningProgress(loadLearningProgress());
+        }
+      }
+    };
 
     window.addEventListener('focus', refreshLearningProgress);
     window.addEventListener('storage', refreshLearningProgress);
 
     return () => {
+      isMounted = false;
       window.removeEventListener('focus', refreshLearningProgress);
       window.removeEventListener('storage', refreshLearningProgress);
     };
-  }, []);
+  }, [currentUser?.id]);
 
   const openLearningPreview = () => {
     if (!learningPreview) {

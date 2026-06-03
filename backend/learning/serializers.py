@@ -1,3 +1,5 @@
+import hashlib
+
 from rest_framework import serializers
 
 from .models import (
@@ -37,11 +39,21 @@ class PublicLessonQuizOptionSerializer(serializers.ModelSerializer):
 
 
 class LessonQuizQuestionSerializer(serializers.ModelSerializer):
-    options = PublicLessonQuizOptionSerializer(many=True, read_only=True)
+    options = serializers.SerializerMethodField()
 
     class Meta:
         model = LessonQuizQuestion
         fields = ["id", "question", "question_type", "explanation", "order", "is_active", "options"]
+
+    def get_options(self, question):
+        options = list(question.options.all())
+        options.sort(key=lambda option: stable_option_sort_key(question.id, option.id))
+        return PublicLessonQuizOptionSerializer(options, many=True).data
+
+
+def stable_option_sort_key(question_id, option_id):
+    key = f"{question_id}:{option_id}".encode("utf-8")
+    return hashlib.sha256(key).hexdigest()
 
 
 class LessonQuizSerializer(serializers.ModelSerializer):
@@ -67,6 +79,7 @@ class LessonQuizSerializer(serializers.ModelSerializer):
             return LessonQuizQuestionSerializer(questions, many=True).data
 
         legacy_options = [option for option in quiz.options.all() if option.question_id is None]
+        legacy_options.sort(key=lambda option: stable_option_sort_key(f"legacy-{quiz.id}", option.id))
         return [
             {
                 "id": f"legacy-{quiz.id}",

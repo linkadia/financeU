@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">OpenLearn Money and Business Free Courses</title>
+  <desc id="desc">Decorative learning lesson cover</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#12324a"/>
+      <stop offset="1" stop-color="#080d18"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="72%" cy="24%" r="62%">
+      <stop offset="0" stop-color="#f2ae2e" stop-opacity=".68"/>
+      <stop offset="1" stop-color="#f2ae2e" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <rect width="1200" height="675" fill="url(#glow)"/>
+  <path d="M0 535 C205 430 350 585 565 510 C780 435 905 315 1200 385 V675 H0 Z" fill="#f2ae2e" opacity=".14"/>
+  
+  <path d="M285 260 L600 125 L915 260 L600 395 Z" fill="#f2ae2e" opacity=".8"/>
+  <path d="M390 320 V445 Q600 540 810 445 V320" fill="#fff3cf" opacity=".24"/>
+  <path d="M915 260 V405" stroke="#fff3cf" stroke-width="18" stroke-linecap="round" opacity=".7"/>
+  <circle cx="915" cy="430" r="24" fill="#fff3cf" opacity=".75"/>
+  <rect x="480" y="455" width="240" height="26" rx="13" fill="#f2ae2e" opacity=".75"/>
+
+</svg>

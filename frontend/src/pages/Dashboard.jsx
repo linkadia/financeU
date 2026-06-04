@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TopBar from '../components/layout/TopBar';
 import BottomNav from '../components/layout/BottomNav';
@@ -243,6 +243,32 @@ function NewsCard({ article, language, onOpen, t }) {
   );
 }
 
+function NewsSkeletonCards() {
+  return (
+    <>
+      {[0, 1, 2].map((item) => (
+        <article
+          key={item}
+          className="overflow-hidden rounded-xl border border-white/10 bg-surface-container-high/70 shadow-sm"
+        >
+          <div className="aspect-[16/10] w-full animate-pulse bg-white/10"></div>
+          <div className="space-y-3 p-4">
+            <div className="h-4 w-32 animate-pulse rounded bg-white/10"></div>
+            <div className="space-y-2">
+              <div className="h-5 w-11/12 animate-pulse rounded bg-white/10"></div>
+              <div className="h-5 w-3/4 animate-pulse rounded bg-white/10"></div>
+            </div>
+            <div className="space-y-2">
+              <div className="h-4 w-full animate-pulse rounded bg-white/10"></div>
+              <div className="h-4 w-5/6 animate-pulse rounded bg-white/10"></div>
+            </div>
+          </div>
+        </article>
+      ))}
+    </>
+  );
+}
+
 function NewsDetailModal({ article, language, onClose, t, userLevel }) {
   const copy = article ? getLocalizedNews(article, language) : null;
   const importance = article ? getImportanceTone(article.importance_score) : null;
@@ -417,6 +443,7 @@ export default function Dashboard() {
   const [courses, setCourses] = useState([]);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [currentUser] = useState(() => getCurrentUser());
+  const syncedDateRangeRef = useRef(null);
   const localCourses = useMemo(() => getLocalCourses(language), [language]);
   const allowedNewsTypes = useMemo(
     () => mapUserInterestsToNewsTypes(currentUser?.onboarding_interests),
@@ -468,11 +495,18 @@ export default function Dashboard() {
   const visibleNews = localizedNews;
   const hasMoreNews = hasNextNewsPage;
   const userNewsLevel = getUserNewsLevel(currentUser);
+  const isRefreshingNews = isLoadingNews && news.length > 0;
+  const isInitialNewsLoad = isLoadingNews && news.length === 0;
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadNews() {
+      if (syncedDateRangeRef.current === newsDateRange) {
+        syncedDateRangeRef.current = null;
+        return;
+      }
+
       setIsLoadingNews(true);
       setNewsError('');
 
@@ -480,13 +514,21 @@ export default function Dashboard() {
         const data = await getNewsArticles({
           newsTypes: allowedNewsTypes,
           dateRange: newsDateRange,
+          dateRangeFallback: true,
           page: 1,
           pageSize: NEWS_PAGE_SIZE,
         });
+        const rows = Array.isArray(data) ? data : data.results ?? [];
+        const effectiveDateRange = data?.effective_date_range ?? newsDateRange;
+
         if (isMounted) {
-          setNews(Array.isArray(data) ? data : data.results ?? []);
+          setNews(rows);
           setNewsPage(1);
           setHasNextNewsPage(Boolean(data?.next));
+          if (effectiveDateRange !== newsDateRange) {
+            syncedDateRangeRef.current = effectiveDateRange;
+            setNewsDateRange(effectiveDateRange);
+          }
         }
       } catch (error) {
         if (isMounted) {
@@ -725,6 +767,7 @@ export default function Dashboard() {
                 className="appearance-none rounded-full border border-white/10 bg-surface-container-high py-2 pl-9 pr-9 font-label-md text-label-md text-on-surface outline-none transition-colors hover:border-white/20 focus:border-[#f2ae2e]/70 focus:ring-2 focus:ring-[#f2ae2e]/20"
                 value={newsDateRange}
                 onChange={(event) => setNewsDateRange(event.target.value)}
+                disabled={isRefreshingNews}
               >
                 {NEWS_DATE_RANGE_OPTIONS.map((option) => (
                   <option key={option.id} value={option.id}>
@@ -738,13 +781,18 @@ export default function Dashboard() {
             </label>
           </div>
 
-          {isLoadingNews && (
-            <GlassCard className="p-6 text-center font-body-md text-body-md text-on-surface-variant">
+          {isRefreshingNews && (
+            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-surface-container-high/70 px-4 py-3 font-label-sm text-label-sm text-on-surface-variant">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-secondary"></span>
               {t('dashboard.loadingNews')}
-            </GlassCard>
+            </div>
           )}
 
-          {!isLoadingNews && newsError && (
+          {isInitialNewsLoad && (
+            <NewsSkeletonCards />
+          )}
+
+          {!isInitialNewsLoad && newsError && (
             <GlassCard className="p-6 text-center font-body-md text-body-md text-error">
               {newsError}
             </GlassCard>
@@ -756,15 +804,19 @@ export default function Dashboard() {
             </GlassCard>
           )}
 
-          {!isLoadingNews && !newsError && visibleNews.map((article) => (
-            <NewsCard
-              key={article.id}
-              article={article}
-              language={language}
-              onOpen={setSelectedArticle}
-              t={t}
-            />
-          ))}
+          {!isInitialNewsLoad && !newsError && (
+            <div className={isRefreshingNews ? 'space-y-stack-md opacity-65 transition-opacity' : 'space-y-stack-md'}>
+              {visibleNews.map((article) => (
+                <NewsCard
+                  key={article.id}
+                  article={article}
+                  language={language}
+                  onOpen={setSelectedArticle}
+                  t={t}
+                />
+              ))}
+            </div>
+          )}
 
           {!isLoadingNews && !newsError && hasMoreNews && (
             <button

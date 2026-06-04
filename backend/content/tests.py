@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone as dt_timezone
 import xml.etree.ElementTree as ET
 
+from django.core.cache import cache
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APITestCase
@@ -44,6 +45,9 @@ def create_article(headline, published_at):
 
 
 class NewsArticleViewSetTests(APITestCase):
+    def setUp(self):
+        cache.clear()
+
     def test_news_defaults_to_last_24_hours(self):
         create_article("Fresh story", timezone.now() - timedelta(hours=2))
         create_article("Older story", timezone.now() - timedelta(days=2))
@@ -63,6 +67,33 @@ class NewsArticleViewSetTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         headlines = [item["headline"] for item in response.data["results"]]
         self.assertEqual(headlines, ["Fresh story", "Older story"])
+
+    def test_news_date_range_fallback_uses_next_range_with_results(self):
+        create_article("Weekly story", timezone.now() - timedelta(days=2))
+        create_article("Monthly story", timezone.now() - timedelta(days=12))
+
+        response = self.client.get("/api/content/news/", {
+            "date_range": "24h",
+            "date_range_fallback": "1",
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["effective_date_range"], "week")
+        headlines = [item["headline"] for item in response.data["results"]]
+        self.assertEqual(headlines, ["Weekly story"])
+
+    def test_news_date_range_fallback_can_reach_month(self):
+        create_article("Monthly story", timezone.now() - timedelta(days=12))
+
+        response = self.client.get("/api/content/news/", {
+            "date_range": "24h",
+            "date_range_fallback": "1",
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["effective_date_range"], "month")
+        headlines = [item["headline"] for item in response.data["results"]]
+        self.assertEqual(headlines, ["Monthly story"])
 
 
 class RssDuplicateDetectionTests(TestCase):

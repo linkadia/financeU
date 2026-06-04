@@ -7,7 +7,7 @@ export default function TopBar() {
     <header className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl dark:bg-surface/80 border-b border-white/10 shadow-sm flex justify-between items-center px-container-padding h-16">
       <div className="flex items-center gap-3">
         <img
-          alt="FinanU"
+          alt="FinancU"
           className="h-6 w-auto object-contain"
           src={logoUrl}
           width={50}

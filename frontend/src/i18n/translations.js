@@ -35,9 +35,9 @@ export const translations = {
       user_not_found: 'Uzytkownik z tym adresem email nie istnieje.',
     },
     auth: {
-      aboutTitle: 'O FinanU',
+      aboutTitle: 'O FinancU',
       aboutText:
-        'FinanU dopasowuje naukę finansów, wgląd w rynki i wskazówki AI do Twoich celów po krótkim onboardingu.',
+        'FinancU dopasowuje naukę finansów, wgląd w rynki i wskazówki AI do Twoich celów po krótkim onboardingu.',
       alreadyAccount: 'Masz już konto?',
       backToLogin: 'Wróć do logowania',
       confirmPassword: 'Potwierdź hasło',
@@ -55,8 +55,8 @@ export const translations = {
       signIn: 'Zaloguj się',
       signingIn: 'Logowanie...',
       signUp: 'Zarejestruj się',
-      signupConsent: 'Zgadzam się utworzyć konto FinanU i otrzymywać spersonalizowane treści edukacyjne.',
-      signupSubtitle: 'Rozpocznij swoją finansową ścieżkę edukacyjną z FinanU.',
+      signupConsent: 'Zgadzam się utworzyć konto FinancU i otrzymywać spersonalizowane treści edukacyjne.',
+      signupSubtitle: 'Rozpocznij swoją finansową ścieżkę edukacyjną z FinancU.',
       signupTitle: 'Utwórz konto',
       username: 'Nazwa użytkownika',
       usernameOrEmail: 'Nazwa użytkownika lub email',
@@ -215,7 +215,7 @@ export const translations = {
       step1Message: 'Aby pomóc zbudować Twój własny dashboard, jakie są Twoje główne zainteresowania finansowe?',
       step2Message: 'Zrozumienie Twojej tolerancji ryzyka pomaga mi dopasować sugestie. Jak podchodzisz do zmienności rynku?',
       step3Message: 'Na koniec: jaki jest Twój główny cel finansowy na następne 12 miesięcy?',
-      welcome: 'Witaj w FinanU',
+      welcome: 'Witaj w FinancU',
     },
     profile: {
       accountDetails: 'Zarządzaj danymi konta i preferencjami personalizacji.',
@@ -285,9 +285,9 @@ export const translations = {
       user_not_found: 'No user exists with that email address.',
     },
     auth: {
-      aboutTitle: 'About FinanU',
+      aboutTitle: 'About FinancU',
       aboutText:
-        'FinanU adapts financial learning, market insights and AI guidance to your goals after a short onboarding.',
+        'FinancU adapts financial learning, market insights and AI guidance to your goals after a short onboarding.',
       alreadyAccount: 'Already have an account?',
       backToLogin: 'Back to login',
       confirmPassword: 'Confirm password',
@@ -305,8 +305,8 @@ export const translations = {
       signIn: 'Sign in',
       signingIn: 'Signing in...',
       signUp: 'Sign Up',
-      signupConsent: 'I agree to create a FinanU account and receive personalized educational content.',
-      signupSubtitle: 'Start your financial learning journey with FinanU.',
+      signupConsent: 'I agree to create a FinancU account and receive personalized educational content.',
+      signupSubtitle: 'Start your financial learning journey with FinancU.',
       signupTitle: 'Create your account',
       username: 'Username',
       usernameOrEmail: 'Username or email',
@@ -466,7 +466,7 @@ export const translations = {
       step1Message: 'To help build your custom dashboard, what are your main financial interests?',
       step2Message: 'Understanding your risk comfort helps me tailor my suggestions. How do you feel about market volatility?',
       step3Message: "Lastly, what's your primary financial goal for the next 12 months?",
-      welcome: 'Welcome to FinanU',
+      welcome: 'Welcome to FinancU',
     },
     profile: {
       accountDetails: 'Manage your account details and personalization preferences.',

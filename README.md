@@ -1,6 +1,6 @@
-# FinanU
+# FinancU
 
-FinanU es una aplicación mobile-first de educación financiera con onboarding personalizado, companion AI, feed de mercado, microcursos con quizzes y perfil de usuario. La app está pensada como una experiencia de aprendizaje guiada: primero identifica intereses, tolerancia al riesgo, objetivo financiero y estilo de acompañamiento; después muestra contenido y cursos adaptados a ese contexto.
+FinancU es una aplicación mobile-first de educación financiera con onboarding personalizado, companion AI, feed de mercado, microcursos con quizzes y perfil de usuario. La app está pensada como una experiencia de aprendizaje guiada: primero identifica intereses, tolerancia al riesgo, objetivo financiero y estilo de acompañamiento; después muestra contenido y cursos adaptados a ese contexto.
 
 El idioma principal de la aplicación es polaco. También incluye inglés y un selector de idioma persistente para que el usuario cambie entre `PL` y `EN`.
 
@@ -97,7 +97,7 @@ Si una fila viene incompleta, por ejemplo sin valor actual o sin fecha efectiva,
 
 ### Noticias RSS de Última Hora
 
-FinanU también puede importar noticias financieras recientes desde varios RSS públicos. Este proceso sirve para alimentar el contenido educativo y de actualidad que verá el usuario en el feed.
+FinancU también puede importar noticias financieras recientes desde varios RSS públicos. Este proceso sirve para alimentar el contenido educativo y de actualidad que verá el usuario en el feed.
 
 El script responsable es:
 

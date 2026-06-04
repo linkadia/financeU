@@ -86,7 +86,7 @@ class NewsLLMOutput(BaseModel):
     mentioned_assets: list[str]
 
 LLM_PROMPT = """
-You are a financial editor for an educational app called FinanU.
+You are a financial editor for an educational app called FinancU.
 You will receive one RSS news item with its title, source, URL, publication date, and HTML-cleaned content.
 
 Return ONLY valid JSON with this exact shape:

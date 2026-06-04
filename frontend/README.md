@@ -1,4 +1,4 @@
-# Finanu Frontend
+# FinancU Frontend
 
 React + Vite + MUI mobile-first frontend.
 

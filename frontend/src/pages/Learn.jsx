@@ -52,6 +52,14 @@ function getProviderTone(contentType) {
   return "bg-red-500/15 text-red-200";
 }
 
+function getLessonSourceUrl(lesson) {
+  return lesson.source_url || lesson.external_url || lesson.youtube_url || "";
+}
+
+function isYoutubeLesson(lesson) {
+  return Boolean(lesson.youtube_video_id || lesson.youtube_url);
+}
+
 function LessonStatusIcon({ completed, active, locked }) {
   if (locked) {
     return <span className="material-symbols-outlined text-on-surface-variant">lock</span>;
@@ -594,6 +602,8 @@ export default function Learn() {
                   const locked = !canAccessLessonContent(activeCourseState, lesson);
                   const examQuestions = lesson.quiz?.questions || (lesson.quiz ? [lesson.quiz] : []);
                   const showQuiz = active && !locked;
+                  const sourceUrl = getLessonSourceUrl(lesson);
+                  const shouldPromoteExternalSource = Boolean(sourceUrl && !isYoutubeLesson(lesson));
 
                   return (
                     <article
@@ -640,10 +650,10 @@ export default function Learn() {
                                     <span className="material-symbols-outlined text-[16px]">{getContentIcon(lesson.content_type)}</span>
                                     {lesson.provider || t("learn.learningResource")}
                                   </span>
-                                  {(lesson.source_url || lesson.youtube_url) && (
+                                  {sourceUrl && !shouldPromoteExternalSource && (
                                     <a
                                       className="text-label-sm text-primary"
-                                      href={lesson.source_url || lesson.youtube_url}
+                                      href={sourceUrl}
                                       rel="noreferrer"
                                       target="_blank"
                                     >
@@ -651,7 +661,22 @@ export default function Learn() {
                                     </a>
                                   )}
                                 </div>
-                                <h3 className="font-title-md text-title-md">{lesson.title}</h3>
+                                {shouldPromoteExternalSource ? (
+                                  <a
+                                    className="group inline-flex items-start gap-2 font-title-md text-title-md text-on-surface transition-colors hover:text-primary"
+                                    href={sourceUrl}
+                                    rel="noreferrer"
+                                    target="_blank"
+                                  >
+                                    <span>{lesson.title}</span>
+                                    <span className="material-symbols-outlined mt-0.5 text-[20px] text-primary transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5">
+                                      open_in_new
+                                    </span>
+                                    <span className="sr-only">{t("learn.opensInNewTab")}</span>
+                                  </a>
+                                ) : (
+                                  <h3 className="font-title-md text-title-md">{lesson.title}</h3>
+                                )}
                                 <p className="mt-1 text-body-md text-on-surface-variant">{lesson.description}</p>
                                 <p className="mt-2 text-label-sm text-on-surface-variant">
                                   {t("learn.contentLanguage")}: {(lesson.content_language || language).toUpperCase()}
@@ -660,6 +685,17 @@ export default function Learn() {
                                 <p className="mt-3 rounded-lg bg-surface-container-high p-3 text-label-md text-on-surface">
                                   {lesson.summary}
                                 </p>
+                                {shouldPromoteExternalSource && (
+                                  <a
+                                    className="mt-stack-md inline-flex w-full items-center justify-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-stack-md py-2.5 font-label-md text-primary transition-all hover:bg-primary/15 active:scale-[0.98]"
+                                    href={sourceUrl}
+                                    rel="noreferrer"
+                                    target="_blank"
+                                  >
+                                    <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                                    {t("learn.openExternalResource")}
+                                  </a>
+                                )}
                               </div>
                             </>
                           )}

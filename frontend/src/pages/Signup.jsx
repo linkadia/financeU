@@ -12,7 +12,6 @@ const initialForm = {
   email: '',
   password: '',
   confirmPassword: '',
-  acceptTerms: false,
 };
 
 export default function Signup() {
@@ -39,11 +38,6 @@ export default function Signup() {
 
     if (form.password !== form.confirmPassword) {
       setError(t('auth.passwordsMismatch'));
-      return;
-    }
-
-    if (!form.acceptTerms) {
-      setError(t('auth.acceptTermsError'));
       return;
     }
 
@@ -178,18 +172,6 @@ export default function Signup() {
               </span>
             </label>
           </div>
-
-          <label className="flex items-start gap-base rounded-xl border border-white/10 bg-surface-container-lowest p-4">
-            <input
-              className="mt-1 h-4 w-4 rounded border-white/20 bg-transparent text-secondary focus:ring-secondary"
-              type="checkbox"
-              checked={form.acceptTerms}
-              onChange={(event) => updateField('acceptTerms', event.target.checked)}
-            />
-            <span className="font-body-sm text-body-sm text-on-surface-variant">
-              {t('auth.signupConsent')}
-            </span>
-          </label>
 
           {error && (
             <div className="rounded-xl border border-error/40 bg-error-container/30 px-4 py-3 font-label-md text-label-md text-on-error-container" role="alert">

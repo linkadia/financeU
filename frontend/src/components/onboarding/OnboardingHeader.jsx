@@ -27,7 +27,7 @@ export default function OnboardingHeader({ currentStep, totalSteps = 4, progress
         <div className="flex items-center">
           <img
             src={logoUrl}
-            alt="FinanU Logo"
+            alt="FinancU Logo"
             className="h-6 md:h-8 object-contain"
           />
         </div>

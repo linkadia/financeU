@@ -188,9 +188,9 @@ class PasswordResetRequestView(APIView):
         )
         if not settings.DEBUG:
             send_mail(
-                "Your FinanU temporary password",
+                "Your FinancU temporary password",
                 (
-                    "We received a password reset request for your FinanU account.\n\n"
+                    "We received a password reset request for your FinancU account.\n\n"
                     f"Temporary password: {temporary_password}\n\n"
                     "Sign in with this temporary password and update it from your profile settings."
                 ),

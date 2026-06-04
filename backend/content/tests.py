@@ -12,7 +12,7 @@ from .models import NewsArticle
 
 def create_article(headline, published_at):
     return NewsArticle.objects.create(
-        source_name="FinanU",
+        source_name="FinancU",
         headline=headline,
         short_summary="Short summary",
         advanced_summary="Advanced summary",

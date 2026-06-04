@@ -96,7 +96,7 @@ export default function Login() {
     <div className="min-h-[100dvh] bg-background text-on-surface flex flex-col overflow-x-hidden">
       <header className="sticky top-0 z-50 flex h-16 w-full items-center justify-between border-b border-white/10 bg-surface/80 px-container-padding shadow-sm backdrop-blur-xl">
         <div className="flex items-center gap-base text-primary">
-          <img alt="FinanU Logo" className="h-8 w-auto object-contain" src={logoUrl} />
+          <img alt="FinancU Logo" className="h-8 w-auto object-contain" src={logoUrl} />
         </div>
         <div className="flex items-center">
           <LanguageSwitcher compact />

@@ -76,7 +76,7 @@ def defaults_for(category, subcategory):
 
 
 class Command(BaseCommand):
-    help = "Create or update the fixed FinanU financial product allowlist."
+    help = "Create or update the fixed FinancU financial product allowlist."
 
     def handle(self, *args, **options):
         created = 0

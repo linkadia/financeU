@@ -563,7 +563,7 @@ RESOURCES = [
         "level": "intermediate",
         "category": "forex",
         "duration": 25,
-        "description": "Kanal o Forex, tradingu i rynkach; uzywany w FinanU wylacznie edukacyjnie.",
+        "description": "Kanal o Forex, tradingu i rynkach; uzywany w FinancU wylacznie edukacyjnie.",
     },
 ]
 
@@ -902,7 +902,7 @@ class Command(BaseCommand):
 
             course.title = group["title"]
             course.description = group["description"]
-            course.provider = "FinanU"
+            course.provider = "FinancU"
             course.source_type = Course.SourceType.CURATED
             course.external_url = group_resources[0]["url"]
             course.language = group["language"]

@@ -105,7 +105,7 @@ def snapshot_has_market_data(snapshot):
 def sync_featured_products_from_latest_snapshots():
     for product in FinancialProduct.objects.filter(is_active=True):
         latest_snapshot = (
-            product.snapshots.order_by("-effective_datetime", "-effective_date", "-created_at")
+            product.snapshots.order_by("-effective_date", "-effective_datetime", "-created_at")
             .first()
         )
         should_be_featured = snapshot_has_market_data(latest_snapshot)

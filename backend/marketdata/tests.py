@@ -415,3 +415,20 @@ class LatestMarketSnapshotsApiTests(TestCase):
         self.assertEqual(response.data[0]["effective_at_raw"], "2026-06-02")
         self.assertEqual(response.data[0]["source_name"], "New Source")
         self.assertEqual(response.data[0]["direction"], "DOWN")
+
+    def test_latest_snapshots_prefers_newer_date_only_snapshot_over_older_datetime(self):
+        import_market_data_from_gemini_payload(
+            self.payload([
+                ["SP500", 7553.68, 7609.78, "2026-06-03T20:00:00Z", "2026-06-02", "Investing.com", None, None],
+                ["SP500", 7592.52, 7553.68, "2026-06-04", "2026-06-03", "S&P Dow Jones Indices", None, None],
+            ])
+        )
+
+        response = self.client.get("/api/market/snapshots/latest/", {"featured": "true", "category": "INDEX"})
+
+        self.assertEqual(response.status_code, 200)
+        sp500 = next(item for item in response.data if item["symbol"] == "SP500")
+        self.assertEqual(sp500["current_value"], "7592.52000000")
+        self.assertEqual(sp500["previous_value"], "7553.68000000")
+        self.assertEqual(sp500["effective_at_raw"], "2026-06-04")
+        self.assertEqual(sp500["source_name"], "S&P Dow Jones Indices")

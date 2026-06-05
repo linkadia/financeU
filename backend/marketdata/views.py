@@ -56,7 +56,7 @@ class LatestSnapshotsView(APIView):
             validation_status__in=usable_statuses,
             current_value__isnull=False,
             effective_at_raw__isnull=False,
-        ).order_by("-effective_datetime", "-effective_date", "-created_at")
+        ).order_by("-effective_date", "-effective_datetime", "-created_at")
         products = list(
             filtered_active_products(request)
             .annotate(latest_snapshot_id=Subquery(latest_snapshot.values("id")[:1]))

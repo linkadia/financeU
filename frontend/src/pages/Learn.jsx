@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getLearningCatalog, getLearningProgress, submitLessonExam } from "../api/learning";
 import TopBar from "../components/layout/TopBar";
@@ -9,6 +9,14 @@ import { useI18n } from "../i18n/I18nContext";
 import { getCurrentUser } from "../utils/session";
 
 const STORAGE_KEY = "finanu_learning_progress";
+const SCROLL_OFFSET = 88;
+
+function scrollToElement(element) {
+  if (!element) return;
+
+  const top = element.getBoundingClientRect().top + window.scrollY - SCROLL_OFFSET;
+  window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" });
+}
 
 function loadProgress() {
   try {
@@ -130,7 +138,7 @@ function LessonMedia({ lesson, language, t }) {
 
 export default function Learn() {
   const { language, t } = useI18n();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const requestedCourseParam = searchParams.get("course");
   const requestedLessonParam = searchParams.get("lesson");
   const currentUser = useMemo(() => getCurrentUser(), []);
@@ -143,6 +151,22 @@ export default function Learn() {
   const [selectedOptionIds, setSelectedOptionIds] = useState({});
   const [examFeedback, setExamFeedback] = useState({});
   const [quizResult, setQuizResult] = useState(null);
+  const lessonRefs = useRef({});
+  const quizStartRef = useRef(null);
+
+  const scrollToLesson = (lessonId) => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        scrollToElement(lessonRefs.current[lessonId]);
+      });
+    });
+  };
+
+  const scrollToQuizStart = () => {
+    window.requestAnimationFrame(() => {
+      scrollToElement(quizStartRef.current);
+    });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -252,12 +276,19 @@ export default function Learn() {
 
     const requestedCourseId = Number(requestedCourseParam);
     const requestedLessonId = Number(requestedLessonParam);
+    const hasRequestedCourse = Boolean(requestedCourseParam);
+    const hasRequestedLesson = Boolean(requestedLessonParam);
     const requestedCourse = activeCourses.find((course) => course.id === requestedCourseId);
     const currentCourse = activeCourses.find((course) => course.id === activeCourseId);
     const nextCourse = requestedCourse || currentCourse || activeCourses[0];
-    const requestedLesson = nextCourse.lessons.find((lesson) => lesson.id === requestedLessonId);
+    const requestedLesson = hasRequestedLesson
+      ? nextCourse.lessons.find((lesson) => lesson.id === requestedLessonId)
+      : null;
     const currentLesson = nextCourse.lessons.find((lesson) => lesson.id === activeLessonId);
-    const nextLesson = requestedLesson || currentLesson || nextCourse.lessons[0];
+    const defaultLesson = hasRequestedCourse && !hasRequestedLesson
+      ? null
+      : nextCourse.lessons.find((lesson) => lesson.is_active) || nextCourse.lessons[0];
+    const nextLesson = requestedLesson || currentLesson || defaultLesson;
 
     if (nextCourse.id !== activeCourseId) {
       setActiveCourseId(nextCourse.id);
@@ -302,14 +333,24 @@ export default function Learn() {
 
   const canAccessActiveLessonContent = activeLesson ? canAccessLessonContent(activeCourseState, activeLesson) : false;
 
+  const setActiveLearningStep = (courseId, lessonId) => {
+    setActiveCourseId(courseId);
+    setActiveLessonId(lessonId || null);
+    setSearchParams(
+      lessonId
+        ? { course: String(courseId), lesson: String(lessonId) }
+        : { course: String(courseId) },
+      { replace: true }
+    );
+  };
+
   const selectCourse = (course) => {
     const selectedCourseState = courseStates.find((state) => state.course.id === course.id);
     const nextLesson = selectedCourseState?.unlocked
       ? selectedCourseState.firstIncompleteLesson || course.lessons[0]
       : course.lessons[0];
 
-    setActiveCourseId(course.id);
-    setActiveLessonId(nextLesson?.id);
+    setActiveLearningStep(course.id, nextLesson?.id);
     setSelectedOptionIds({});
     setExamFeedback({});
     setQuizResult(null);
@@ -319,7 +360,7 @@ export default function Learn() {
     if (!activeCourse) return;
 
     if (activeLessonId === lesson.id) {
-      setActiveLessonId(null);
+      setActiveLearningStep(activeCourse.id, null);
       setSelectedOptionIds({});
       setExamFeedback({});
       setQuizResult(null);
@@ -327,7 +368,7 @@ export default function Learn() {
     }
 
     const lessonIsAccessible = canAccessLessonContent(activeCourseState, lesson);
-    setActiveLessonId(lesson.id);
+    setActiveLearningStep(activeCourse.id, lesson.id);
     setSelectedOptionIds({});
     setExamFeedback({});
     setQuizResult(null);
@@ -348,11 +389,16 @@ export default function Learn() {
   const goToNextStep = () => {
     if (!activeCourse || !activeLesson) return;
 
-    const lessonIndex = activeCourse.lessons.findIndex((lesson) => lesson.id === activeLesson.id);
-    const nextLesson = activeCourse.lessons[lessonIndex + 1];
+    const activeLessons = activeCourse.lessons.filter((lesson) => lesson.is_active);
+    const lessonIndex = activeLessons.findIndex((lesson) => lesson.id === activeLesson.id);
+    const nextLesson = activeLessons[lessonIndex + 1];
 
     if (nextLesson) {
-      selectLesson(nextLesson);
+      setActiveLearningStep(activeCourse.id, nextLesson.id);
+      setSelectedOptionIds({});
+      setExamFeedback({});
+      setQuizResult(null);
+      scrollToLesson(nextLesson.id);
       return;
     }
 
@@ -360,11 +406,15 @@ export default function Learn() {
     const nextCourseState = courseStates[courseIndex + 1];
 
     if (nextCourseState) {
-      setActiveCourseId(nextCourseState.course.id);
-      setActiveLessonId(nextCourseState.firstIncompleteLesson?.id || nextCourseState.course.lessons[0]?.id);
+      const nextCourseFirstLesson =
+        nextCourseState.firstIncompleteLesson ||
+        nextCourseState.course.lessons.find((lesson) => lesson.is_active);
+
+      setActiveLearningStep(nextCourseState.course.id, nextCourseFirstLesson?.id);
       setSelectedOptionIds({});
       setExamFeedback({});
       setQuizResult(null);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
@@ -396,6 +446,9 @@ export default function Learn() {
             completed_at: result.completed_at,
           }
         }));
+        if (!result.quiz_answered_correctly) {
+          scrollToQuizStart();
+        }
         return;
       } catch {
         // Fall through to the local validator only when the bundled fallback data includes answers.
@@ -430,6 +483,7 @@ export default function Learn() {
           quiz_answered_correctly: false
         }
       }));
+      scrollToQuizStart();
       return;
     }
 
@@ -614,6 +668,13 @@ export default function Learn() {
                           : "border-white/10 bg-surface-container"
                       }`}
                       key={lesson.id}
+                      ref={(element) => {
+                        if (element) {
+                          lessonRefs.current[lesson.id] = element;
+                        } else {
+                          delete lessonRefs.current[lesson.id];
+                        }
+                      }}
                     >
                       <button
                         className="flex w-full items-center gap-stack-md p-stack-md text-left transition-all active:scale-[0.99]"
@@ -701,7 +762,7 @@ export default function Learn() {
                           )}
 
                           {showQuiz && (
-                            <div className="border-t border-white/10 p-stack-md">
+                            <div className="border-t border-white/10 p-stack-md" ref={quizStartRef}>
                               <div className="mb-stack-md flex items-start justify-between gap-stack-md">
                                 <div>
                                   <p className="mb-1 text-label-sm uppercase text-secondary">{t("learn.lessonQuiz")}</p>

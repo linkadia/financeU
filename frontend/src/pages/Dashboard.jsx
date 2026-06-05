@@ -462,6 +462,9 @@ export default function Dashboard() {
       })),
     ];
   }, [allowedNewsTypes, t]);
+  const requestedNewsTypes = useMemo(() => (
+    activeCategory === 'all' ? allowedNewsTypes : [activeCategory]
+  ), [activeCategory, allowedNewsTypes]);
 
   const learningPreview = useMemo(
     () => getLearningPreview(courses, learningProgress),
@@ -512,7 +515,7 @@ export default function Dashboard() {
 
       try {
         const data = await getNewsArticles({
-          newsTypes: allowedNewsTypes,
+          newsTypes: requestedNewsTypes,
           dateRange: newsDateRange,
           dateRangeFallback: true,
           page: 1,
@@ -546,7 +549,7 @@ export default function Dashboard() {
     return () => {
       isMounted = false;
     };
-  }, [allowedNewsTypes, newsDateRange, t]);
+  }, [requestedNewsTypes, newsDateRange, t]);
 
   useEffect(() => {
     let isMounted = true;
@@ -626,6 +629,13 @@ export default function Dashboard() {
     navigate(`/learn?course=${learningPreview.course.id}&lesson=${learningPreview.lesson.id}`);
   };
 
+  const handleNewsCategoryChange = (nextCategory) => {
+    if (nextCategory === activeCategory) return;
+
+    setActiveCategory(nextCategory);
+    setNewsDateRange('24h');
+  };
+
   const showMoreNews = async () => {
     if (isLoadingMoreNews || !hasNextNewsPage) return;
 
@@ -635,7 +645,7 @@ export default function Dashboard() {
     try {
       const nextPage = newsPage + 1;
       const data = await getNewsArticles({
-        newsTypes: allowedNewsTypes,
+        newsTypes: requestedNewsTypes,
         dateRange: newsDateRange,
         page: nextPage,
         pageSize: NEWS_PAGE_SIZE,
@@ -742,7 +752,7 @@ export default function Dashboard() {
             <CategoryChips
               categories={categories}
               activeCategory={activeCategory}
-              onCategoryChange={setActiveCategory}
+              onCategoryChange={handleNewsCategoryChange}
               className="py-0"
             />
           </div>

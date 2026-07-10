@@ -19,6 +19,8 @@ def env_bool(name, default=False):
 SECRET_KEY = getenv("DJANGO_SECRET_KEY", "dev-secret-key-change-in-production")
 DEBUG = getenv("DJANGO_DEBUG", "True").lower() == "true"
 DEFAULT_FROM_EMAIL = getenv("DEFAULT_FROM_EMAIL", "no-reply@finanu.local")
+FRONTEND_SIGNUP_URL = getenv("FRONTEND_SIGNUP_URL", "http://localhost:5173/signup")
+INTEGRATOR_WEBHOOK_SECRET = getenv("INTEGRATOR_WEBHOOK_SECRET", "")
 EMAIL_BACKEND = getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = getenv("EMAIL_HOST", "localhost")
 EMAIL_PORT = int(getenv("EMAIL_PORT", "25"))
@@ -178,6 +180,7 @@ REST_FRAMEWORK = {
         "settings": getenv("DRF_SETTINGS_RATE", "30/hour"),
         "onboarding": getenv("DRF_ONBOARDING_RATE", "60/hour"),
         "password_reset": getenv("DRF_PASSWORD_RESET_RATE", "5/hour"),
+        "integration_events": getenv("DRF_INTEGRATION_EVENTS_RATE", "120/minute"),
     },
     # Trust exactly one proxy/load balancer hop when resolving X-Forwarded-For.
     "NUM_PROXIES": int(getenv("DRF_NUM_PROXIES", "1")),

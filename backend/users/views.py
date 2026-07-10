@@ -1,7 +1,13 @@
+import hashlib
+import hmac
+from urllib.parse import urlencode
+
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.mail import send_mail
+from django.db import transaction
 from django.db.models import Q
+from django.utils import timezone
 from django.utils.crypto import get_random_string
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -9,9 +15,249 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
 
-from .models import UserProfile
-from .serializers import UserProfileSerializer, UserSettingsSerializer
+from .models import IntegrationEvent, SubscriptionEntitlement, UserProfile
+from .serializers import (
+    IntegrationSubscriptionEventSerializer,
+    UserProfileSerializer,
+    UserSettingsSerializer,
+)
 from .throttling import LoginUserIpThrottle
+
+
+def normalize_signature(value):
+    value = (value or "").strip()
+    if value.startswith("sha256="):
+        return value.split("=", 1)[1]
+    return value
+
+
+def build_signup_url(token):
+    separator = "&" if "?" in settings.FRONTEND_SIGNUP_URL else "?"
+    return f"{settings.FRONTEND_SIGNUP_URL}{separator}{urlencode({'token': token})}"
+
+
+def verify_integrator_signature(request):
+    secret = settings.INTEGRATOR_WEBHOOK_SECRET
+    if not secret:
+        return Response(
+            {
+                "detail": "Integrator webhook secret is not configured.",
+                "error": "integration_secret_not_configured",
+            },
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    signature = normalize_signature(request.headers.get("X-Finanu-Signature"))
+    expected_signature = hmac.new(
+        secret.encode("utf-8"),
+        request.body,
+        hashlib.sha256,
+    ).hexdigest()
+    if not hmac.compare_digest(signature, expected_signature):
+        return Response(
+            {
+                "detail": "Invalid integration signature.",
+                "error": "invalid_integration_signature",
+            },
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    return None
+
+
+def get_subscription_access_until(payload):
+    subscription = payload.get("subscription") or {}
+    return subscription.get("access_until")
+
+
+def apply_customer_metadata(entitlement, payload):
+    customer = payload.get("customer") or {}
+    entitlement.external_user_id = customer.get("external_user_id", "") or ""
+    entitlement.msisdn_hash = customer.get("msisdn_hash", "") or ""
+    entitlement.country = customer.get("country", "") or ""
+
+
+def activate_entitlement(entitlement, payload):
+    signup_token = None
+    entitlement.access_until = get_subscription_access_until(payload)
+    entitlement.cancelled_at = None
+    entitlement.last_event_id = payload["event_id"]
+    apply_customer_metadata(entitlement, payload)
+
+    if entitlement.user_id:
+        entitlement.status = SubscriptionEntitlement.STATUS_ACTIVE
+        entitlement.user.estado = UserProfile.STATUS_ACTIVE
+        entitlement.user.integrator_tid = entitlement.tid
+        entitlement.user.integrator_sid = entitlement.sid
+        if entitlement.access_until:
+            entitlement.user.fecha_renovacion = entitlement.access_until
+        entitlement.user.save(
+            update_fields=[
+                "estado",
+                "integrator_tid",
+                "integrator_sid",
+                "fecha_renovacion",
+            ]
+        )
+        action = "subscription_activated"
+    else:
+        entitlement.status = SubscriptionEntitlement.STATUS_PENDING_REGISTRATION
+        signup_token = entitlement.generate_signup_token()
+        action = "signup_token_created"
+
+    entitlement.save(
+        update_fields=[
+            "status",
+            "signup_token_hash",
+            "signup_token_created_at",
+            "access_until",
+            "cancelled_at",
+            "external_user_id",
+            "msisdn_hash",
+            "country",
+            "last_event_id",
+            "updated_at",
+        ]
+    )
+    return action, signup_token
+
+
+def cancel_entitlement(entitlement, payload):
+    access_until = get_subscription_access_until(payload) or timezone.localdate()
+    entitlement.status = SubscriptionEntitlement.STATUS_CANCELLED
+    entitlement.access_until = access_until
+    entitlement.cancelled_at = payload["occurred_at"]
+    entitlement.last_event_id = payload["event_id"]
+    entitlement.signup_token_hash = None
+    apply_customer_metadata(entitlement, payload)
+
+    if entitlement.user_id:
+        entitlement.user.estado = UserProfile.STATUS_INACTIVE
+        entitlement.user.integrator_tid = entitlement.tid
+        entitlement.user.integrator_sid = entitlement.sid
+        entitlement.user.fecha_renovacion = access_until
+        entitlement.user.save(
+            update_fields=[
+                "estado",
+                "integrator_tid",
+                "integrator_sid",
+                "fecha_renovacion",
+            ]
+        )
+
+    entitlement.save(
+        update_fields=[
+            "status",
+            "signup_token_hash",
+            "access_until",
+            "cancelled_at",
+            "external_user_id",
+            "msisdn_hash",
+            "country",
+            "last_event_id",
+            "updated_at",
+        ]
+    )
+    return "subscription_cancelled"
+
+
+class IntegrationSubscriptionEventView(APIView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "integration_events"
+
+    def post(self, request):
+        signature_error = verify_integrator_signature(request)
+        if signature_error:
+            return signature_error
+
+        serializer = IntegrationSubscriptionEventSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payload = serializer.validated_data
+
+        existing_event = IntegrationEvent.objects.filter(
+            event_id=payload["event_id"]
+        ).first()
+        if existing_event:
+            return Response(
+                {
+                    "status": "ok",
+                    "action": "already_processed",
+                    "event_id": existing_event.event_id,
+                    "event_type": existing_event.event_type,
+                    "tid": existing_event.tid,
+                    "sid": existing_event.sid,
+                }
+            )
+
+        with transaction.atomic():
+            entitlement = (
+                SubscriptionEntitlement.objects.select_for_update()
+                .filter(tid=payload["tid"], sid=payload["sid"])
+                .first()
+            )
+            if not entitlement:
+                entitlement = SubscriptionEntitlement.objects.create(
+                    tid=payload["tid"],
+                    sid=payload["sid"],
+                )
+
+            signup_token = None
+            if payload["event_type"] == IntegrationEvent.TYPE_CANCELLED:
+                action = cancel_entitlement(entitlement, payload)
+            else:
+                action, signup_token = activate_entitlement(entitlement, payload)
+
+            IntegrationEvent.objects.create(
+                event_id=payload["event_id"],
+                event_type=payload["event_type"],
+                operator=payload.get("operator", ""),
+                integrator=payload.get("integrator", ""),
+                service=payload.get("service", ""),
+                tid=payload["tid"],
+                sid=payload["sid"],
+                occurred_at=payload["occurred_at"],
+                raw_payload=request.data,
+                status=IntegrationEvent.STATUS_PROCESSED,
+                action=action,
+                entitlement=entitlement,
+            )
+
+        response_payload = {
+            "status": "ok",
+            "action": action,
+            "event_id": payload["event_id"],
+            "event_type": payload["event_type"],
+            "tid": payload["tid"],
+            "sid": payload["sid"],
+        }
+        if signup_token:
+            response_payload["signup_token"] = signup_token
+            response_payload["signup_url"] = build_signup_url(signup_token)
+        if entitlement.access_until:
+            response_payload["access_until"] = entitlement.access_until
+
+        return Response(response_payload, status=status.HTTP_200_OK)
+
+
+class SignupTokenValidationView(APIView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "signup"
+
+    def get(self, request):
+        token = request.query_params.get("token", "")
+        entitlement = SubscriptionEntitlement.get_by_signup_token(token)
+        if not entitlement or not entitlement.can_be_used_for_signup():
+            return Response(
+                {
+                    "valid": False,
+                    "detail": "Invalid or expired signup token.",
+                    "error": "invalid_signup_token",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        return Response({"valid": True})
+
 
 class UserProfileViewSet(viewsets.ModelViewSet):
     queryset = UserProfile.objects.all()

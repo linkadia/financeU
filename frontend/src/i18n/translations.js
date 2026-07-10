@@ -28,6 +28,7 @@ export const translations = {
     errors: {
       fieldInvalid: '{{field}} jest nieprawidlowe.',
       invalid_credentials: 'Nieprawidlowa nazwa uzytkownika lub haslo.',
+      invalid_signup_token: 'Link rejestracyjny jest nieprawidlowy albo wygasl.',
       missing_email: 'Podaj adres email.',
       missing_login_fields: 'Podaj nazwe uzytkownika lub email oraz haslo.',
       subscription_inactive: 'Twoja subskrypcja jest nieaktywna. Odnow ja, aby uzyskac dostep.',
@@ -55,6 +56,10 @@ export const translations = {
       signingIn: 'Logowanie...',
       signUp: 'Zarejestruj się',
       signupSubtitle: 'Rozpocznij swoją finansową ścieżkę edukacyjną z FinancU.',
+      signupToken: 'Link rejestracyjny',
+      signupTokenInvalid: 'Ten link rejestracyjny jest nieprawidlowy, wygasl albo zostal juz uzyty.',
+      signupTokenMissing: 'Aby utworzyc konto, musisz wejsc przez zatwierdzony przeplyw subskrypcji.',
+      signupTokenRequired: 'Aby utworzyc konto, potrzebujesz aktywnego linku rejestracyjnego.',
       signupTitle: 'Utwórz konto',
       username: 'Nazwa użytkownika',
       usernameOrEmail: 'Nazwa użytkownika lub email',
@@ -67,6 +72,7 @@ export const translations = {
       resetPasswordTitle: 'Reset hasla',
       sendReset: 'Wyslij',
       sendingReset: 'Wysylanie...',
+      validatingSignupToken: 'Sprawdzanie linku rejestracyjnego...',
     },
     nav: {
       feed: 'Feed',
@@ -276,6 +282,7 @@ export const translations = {
     errors: {
       fieldInvalid: '{{field}} is invalid.',
       invalid_credentials: 'Invalid username or password.',
+      invalid_signup_token: 'The signup link is invalid or expired.',
       missing_email: 'Enter your email address.',
       missing_login_fields: 'Enter your username or email and password.',
       subscription_inactive: 'Your subscription is inactive. Renew it to regain access.',
@@ -303,6 +310,10 @@ export const translations = {
       signingIn: 'Signing in...',
       signUp: 'Sign Up',
       signupSubtitle: 'Start your financial learning journey with FinancU.',
+      signupToken: 'Signup link',
+      signupTokenInvalid: 'This signup link is invalid, expired, or has already been used.',
+      signupTokenMissing: 'To create an account, you need to arrive through the approved subscription flow.',
+      signupTokenRequired: 'To create an account, you need an active signup link.',
       signupTitle: 'Create your account',
       username: 'Username',
       usernameOrEmail: 'Username or email',
@@ -315,6 +326,7 @@ export const translations = {
       resetPasswordTitle: 'Reset password',
       sendReset: 'Send',
       sendingReset: 'Sending...',
+      validatingSignupToken: 'Checking signup link...',
     },
     nav: {
       feed: 'Feed',

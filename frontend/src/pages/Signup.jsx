@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { createUserProfile } from '../api/users';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { createUserProfile, validateSignupToken } from '../api/users';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useI18n } from '../i18n/I18nContext';
 import { translateApiError } from '../utils/apiErrors';
@@ -16,12 +16,37 @@ const initialForm = {
 
 export default function Signup() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t } = useI18n();
+  const signupToken = useMemo(() => searchParams.get('token')?.trim() ?? '', [searchParams]);
   const [form, setForm] = useState(initialForm);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState(signupToken ? 'checking' : 'missing');
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (!signupToken) {
+      setTokenStatus('missing');
+      return undefined;
+    }
+
+    setTokenStatus('checking');
+    validateSignupToken(signupToken)
+      .then(() => {
+        if (isActive) setTokenStatus('valid');
+      })
+      .catch(() => {
+        if (isActive) setTokenStatus('invalid');
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [signupToken]);
 
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -44,7 +69,7 @@ export default function Signup() {
     setIsSubmitting(true);
 
     try {
-      const user = await createUserProfile(form);
+      const user = await createUserProfile({ ...form, signup_token: signupToken });
       setCurrentUser(user);
       setError('');
       navigate('/onboarding/step1');
@@ -82,10 +107,28 @@ export default function Signup() {
             {t('auth.signupTitle')}
           </h1>
           <p className="font-body-lg text-body-lg text-on-surface-variant">
-            {t('auth.signupSubtitle')}
+            {tokenStatus === 'valid' ? t('auth.signupSubtitle') : t('auth.signupTokenRequired')}
           </p>
         </section>
 
+        {tokenStatus === 'checking' && (
+          <div className="mt-8 w-full max-w-md rounded-xl border border-white/10 bg-surface-container-lowest px-4 py-4 text-center font-body-md text-body-md text-on-surface-variant" role="status">
+            {t('auth.validatingSignupToken')}
+          </div>
+        )}
+
+        {tokenStatus !== 'checking' && tokenStatus !== 'valid' && (
+          <div className="mt-8 w-full max-w-md rounded-xl border border-error/40 bg-error-container/30 px-5 py-4 text-center font-body-md text-body-md text-on-error-container" role="alert">
+            <p>
+              {tokenStatus === 'missing' ? t('auth.signupTokenMissing') : t('auth.signupTokenInvalid')}
+            </p>
+            <Link className="mt-4 inline-flex font-bold text-secondary hover:underline" to="/">
+              {t('auth.backToLogin')}
+            </Link>
+          </div>
+        )}
+
+        {tokenStatus === 'valid' && (
         <form className="mt-8 w-full max-w-md space-y-stack-md" onSubmit={handleSubmit}>
           <label className="block">
             <span className="sr-only">{t('auth.username')}</span>
@@ -187,6 +230,7 @@ export default function Signup() {
             {isSubmitting ? t('auth.creatingAccount') : t('auth.createAccount')}
           </button>
         </form>
+        )}
       </main>
 
       <footer className="w-full px-container-padding py-stack-lg text-center">

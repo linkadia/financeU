@@ -1,0 +1,18 @@
+# Example for /etc/cron.d/finanu-daily-ingest.
+# Adjust deploy user, FINANU_APP_ROOT and log directory for the server.
+#
+# Required before enabling:
+#   sudo mkdir -p /var/log/finanu
+#   sudo chown deploy:deploy /var/log/finanu
+#
+# Cron uses the server timezone unless CRON_TZ is supported by your distro.
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+CRON_TZ=Europe/Madrid
+
+FINANU_APP_ROOT=/opt/finanU
+FINANU_LOG_DIR=/var/log/finanu
+
+# Run every day at 07:00. The script starts markets first, then RSS news even if markets fails.
+0 7 * * * deploy flock -n /tmp/finanu-daily-ingest.lock bash $FINANU_APP_ROOT/deploy/cron/run_daily_ingest.sh

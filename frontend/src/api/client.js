@@ -13,12 +13,19 @@ function uniqueUrls(urls) {
   return [...new Set(urls.map((url) => url.replace(/\/$/, '')))];
 }
 
+function resolveBaseUrl(url) {
+  if (!url) return url;
+  if (url.startsWith('/')) return url;
+  return url;
+}
+
 export function getApiBaseUrls() {
+  const defaultBaseUrl = import.meta.env.PROD ? '/api' : DEFAULT_API_BASE_URL;
   return uniqueUrls([
-    import.meta.env.VITE_API_BASE_URL ?? DEFAULT_API_BASE_URL,
+    import.meta.env.VITE_API_BASE_URL ?? defaultBaseUrl,
     ...splitBaseUrls(import.meta.env.VITE_API_FALLBACK_BASE_URLS),
-    ...DEFAULT_FALLBACK_BASE_URLS,
-  ]);
+    ...(import.meta.env.PROD ? [] : DEFAULT_FALLBACK_BASE_URLS),
+  ]).map(resolveBaseUrl);
 }
 
 function isSafeToRetry(options = {}) {

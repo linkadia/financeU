@@ -33,7 +33,11 @@ export function requestPasswordReset({ email }) {
   });
 }
 
-export function createUserProfile({ username, email, password }) {
+export function validateSignupToken(token) {
+  return request(`/users/signup-token/validate/?token=${encodeURIComponent(token)}`);
+}
+
+export function createUserProfile({ username, email, password, signup_token }) {
   return request('/users/profiles/', {
     method: 'POST',
     body: JSON.stringify({
@@ -41,6 +45,7 @@ export function createUserProfile({ username, email, password }) {
       email,
       display_name: username,
       password,
+      signup_token,
     }),
   });
 }

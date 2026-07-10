@@ -158,6 +158,14 @@ class FinancialProductSnapshot(models.Model):
         ordering = ["product__display_order", "-created_at"]
         indexes = [
             models.Index(fields=["product", "-created_at"]),
+            models.Index(
+                fields=["product", "validation_status", "-effective_date", "-effective_datetime", "-created_at"],
+                name="market_snap_latest_idx",
+            ),
+            models.Index(
+                fields=["product", "-effective_date", "-created_at"],
+                name="market_snap_history_idx",
+            ),
             models.Index(fields=["effective_date"]),
             models.Index(fields=["validation_status", "created_at"]),
         ]

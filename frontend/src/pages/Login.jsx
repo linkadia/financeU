@@ -4,7 +4,7 @@ import { loginUser, requestPasswordReset } from '../api/users';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useI18n } from '../i18n/I18nContext';
 import { translateApiError } from '../utils/apiErrors';
-import { getCurrentUser, setCurrentUser } from '../utils/session';
+import { getCurrentUser, getPendingSignupToken, setCurrentUser } from '../utils/session';
 import logoUrl from '../assets/logoFinancU.svg';
 
 export default function Login() {
@@ -21,6 +21,10 @@ export default function Login() {
   const [resetError, setResetError] = useState('');
   const [resetResult, setResetResult] = useState(null);
   const [isResetSubmitting, setIsResetSubmitting] = useState(false);
+  const pendingSignupToken = getPendingSignupToken();
+  const signupPath = pendingSignupToken
+    ? `/signup?token=${encodeURIComponent(pendingSignupToken)}`
+    : '/signup';
 
   useEffect(() => {
     const currentUser = getCurrentUser();
@@ -197,7 +201,7 @@ export default function Login() {
       <footer className="w-full px-container-padding py-stack-lg text-center">
         <p className="font-body-md text-body-md text-on-surface-variant">
           {t('auth.noAccount')}{' '}
-          <Link className="font-bold text-secondary hover:underline" to="/signup">
+          <Link className="font-bold text-secondary hover:underline" to={signupPath}>
             {t('auth.signUp')}
           </Link>
         </p>

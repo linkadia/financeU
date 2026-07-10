@@ -4,7 +4,12 @@ import { createUserProfile, validateSignupToken } from '../api/users';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useI18n } from '../i18n/I18nContext';
 import { translateApiError } from '../utils/apiErrors';
-import { setCurrentUser } from '../utils/session';
+import {
+  clearPendingSignupToken,
+  getPendingSignupToken,
+  setCurrentUser,
+  setPendingSignupToken,
+} from '../utils/session';
 import logoUrl from '../assets/logoFinancU.svg';
 
 const initialForm = {
@@ -18,7 +23,9 @@ export default function Signup() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { t } = useI18n();
-  const signupToken = useMemo(() => searchParams.get('token')?.trim() ?? '', [searchParams]);
+  const tokenFromUrl = useMemo(() => searchParams.get('token')?.trim() ?? '', [searchParams]);
+  const [storedSignupToken, setStoredSignupToken] = useState(() => getPendingSignupToken());
+  const signupToken = tokenFromUrl || storedSignupToken;
   const [form, setForm] = useState(initialForm);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -35,18 +42,26 @@ export default function Signup() {
     }
 
     setTokenStatus('checking');
+    if (tokenFromUrl) {
+      setPendingSignupToken(tokenFromUrl);
+      setStoredSignupToken(tokenFromUrl);
+    }
     validateSignupToken(signupToken)
       .then(() => {
         if (isActive) setTokenStatus('valid');
       })
       .catch(() => {
-        if (isActive) setTokenStatus('invalid');
+        clearPendingSignupToken();
+        if (isActive) {
+          setStoredSignupToken('');
+          setTokenStatus('invalid');
+        }
       });
 
     return () => {
       isActive = false;
     };
-  }, [signupToken]);
+  }, [signupToken, tokenFromUrl]);
 
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -71,6 +86,7 @@ export default function Signup() {
     try {
       const user = await createUserProfile({ ...form, signup_token: signupToken });
       setCurrentUser(user);
+      clearPendingSignupToken();
       setError('');
       navigate('/onboarding/step1');
     } catch (requestError) {

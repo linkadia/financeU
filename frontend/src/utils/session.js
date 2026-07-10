@@ -1,9 +1,22 @@
-const CURRENT_USER_KEY = 'finanu.currentUser';
+const CURRENT_USER_KEY = 'financu.currentUser';
+const LEGACY_CURRENT_USER_KEY = 'finanu.currentUser';
 const PENDING_SIGNUP_TOKEN_KEY = 'financu.pendingSignupToken';
 
 export function getCurrentUser() {
   try {
-    return JSON.parse(localStorage.getItem(CURRENT_USER_KEY));
+    const currentUser = localStorage.getItem(CURRENT_USER_KEY);
+    if (currentUser) {
+      return JSON.parse(currentUser);
+    }
+
+    const legacyUser = localStorage.getItem(LEGACY_CURRENT_USER_KEY);
+    if (!legacyUser) {
+      return null;
+    }
+
+    localStorage.setItem(CURRENT_USER_KEY, legacyUser);
+    localStorage.removeItem(LEGACY_CURRENT_USER_KEY);
+    return JSON.parse(legacyUser);
   } catch {
     return null;
   }
@@ -11,10 +24,12 @@ export function getCurrentUser() {
 
 export function setCurrentUser(user) {
   localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+  localStorage.removeItem(LEGACY_CURRENT_USER_KEY);
 }
 
 export function clearCurrentUser() {
   localStorage.removeItem(CURRENT_USER_KEY);
+  localStorage.removeItem(LEGACY_CURRENT_USER_KEY);
 }
 
 export function getPendingSignupToken() {

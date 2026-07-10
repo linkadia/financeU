@@ -72,9 +72,8 @@ class ProductMarketSerializer(serializers.ModelSerializer):
         return label or obj.unit
 
     def latest_snapshot(self, obj):
-        cache = getattr(obj, "_latest_snapshot_cache", None)
-        if cache is not None:
-            return cache
+        if hasattr(obj, "_latest_snapshot_cache"):
+            return obj._latest_snapshot_cache
 
         snapshot = obj.snapshots.order_by("-created_at").first()
         obj._latest_snapshot_cache = snapshot

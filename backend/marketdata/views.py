@@ -33,9 +33,37 @@ def filtered_active_products(request):
 class ProductListView(APIView):
     throttle_classes = []
 
+    @method_decorator(cache_page(300))
     def get(self, request):
+        usable_statuses = [
+            FinancialProductSnapshot.ValidationStatus.VALID,
+            FinancialProductSnapshot.ValidationStatus.PARTIAL,
+        ]
+        latest_snapshot = FinancialProductSnapshot.objects.filter(
+            product=OuterRef("pk"),
+            validation_status__in=usable_statuses,
+            current_value__isnull=False,
+            effective_at_raw__isnull=False,
+        ).order_by("-effective_date", "-effective_datetime", "-created_at")
+        products = list(
+            filtered_active_products(request).annotate(
+                latest_snapshot_id=Subquery(latest_snapshot.values("id")[:1])
+            )
+        )
+        snapshot_ids = [
+            product.latest_snapshot_id
+            for product in products
+            if product.latest_snapshot_id is not None
+        ]
+        snapshot_by_id = {
+            snapshot.id: snapshot
+            for snapshot in FinancialProductSnapshot.objects.filter(id__in=snapshot_ids)
+        }
+        for product in products:
+            product._latest_snapshot_cache = snapshot_by_id.get(product.latest_snapshot_id)
+
         serializer = ProductMarketSerializer(
-            filtered_active_products(request),
+            products,
             many=True,
             context={"lang": normalized_lang(request)},
         )
@@ -45,7 +73,7 @@ class ProductListView(APIView):
 class LatestSnapshotsView(APIView):
     throttle_classes = []
 
-    @method_decorator(cache_page(60))
+    @method_decorator(cache_page(300))
     def get(self, request):
         usable_statuses = [
             FinancialProductSnapshot.ValidationStatus.VALID,
@@ -84,6 +112,7 @@ class LatestSnapshotsView(APIView):
 class ProductHistoryView(APIView):
     throttle_classes = []
 
+    @method_decorator(cache_page(300))
     def get(self, request, slug):
         try:
             limit = int(request.query_params.get("limit", 100))

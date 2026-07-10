@@ -15,7 +15,7 @@ class NewsArticlePagination(pagination.PageNumberPagination):
     max_page_size = 50
 
 
-@method_decorator(cache_page(60), name="list")
+@method_decorator(cache_page(300), name="list")
 class NewsArticleViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = PublicNewsArticleSerializer
     pagination_class = NewsArticlePagination

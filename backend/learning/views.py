@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.db.models import Prefetch
 from django.utils import timezone
 from rest_framework import viewsets
@@ -22,6 +23,7 @@ from .serializers import CourseSerializer
 class LearningCatalogViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CourseSerializer
     throttle_classes = []
+    PUBLIC_CATALOG_CACHE_SECONDS = 300
 
     def get_queryset(self):
         language = self.request.query_params.get("language", "en")
@@ -71,10 +73,21 @@ class LearningCatalogViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="catalog")
     def catalog(self, request):
+        user_id = request.query_params.get("user_id")
+        if not user_id:
+            language = request.query_params.get("language", "en")
+            if language not in {"en", "pl"}:
+                language = "en"
+            category = request.query_params.get("category", "")
+            level = request.query_params.get("level", "")
+            cache_key = f"learning:catalog:v1:{language}:{category}:{level}"
+            cached_data = cache.get(cache_key)
+            if cached_data is not None:
+                return Response(cached_data)
+
         courses = list(self.get_queryset())
         data = self.get_serializer(courses, many=True).data
 
-        user_id = request.query_params.get("user_id")
         if user_id:
             user = UserProfile.objects.filter(id=user_id).first()
             if user:
@@ -88,16 +101,18 @@ class LearningCatalogViewSet(viewsets.ReadOnlyModelViewSet):
                 }
 
                 for course_data, course in zip(data, courses):
+                    active_lessons = list(course.lessons.all())
+                    total_lessons = len(active_lessons)
                     course_progress_item = course_progress.get(course.id)
                     course_data["progress"] = {
                         "progress_percentage": course_progress_item.progress_percentage if course_progress_item else 0,
                         "completed_lessons_count": course_progress_item.completed_lessons_count if course_progress_item else 0,
-                        "total_lessons_count": course_progress_item.total_lessons_count if course_progress_item else course.total_lessons,
+                        "total_lessons_count": course_progress_item.total_lessons_count if course_progress_item else total_lessons,
                         "completed_at": course_progress_item.completed_at if course_progress_item else None,
                     }
 
                     previous_completed = True
-                    for lesson_data, lesson in zip(course_data["lessons"], course.lessons.all()):
+                    for lesson_data, lesson in zip(course_data["lessons"], active_lessons):
                         lesson_progress = progress.get(lesson.id)
                         completed = (
                             lesson_progress
@@ -114,6 +129,8 @@ class LearningCatalogViewSet(viewsets.ReadOnlyModelViewSet):
                             "completed" if completed else "available" if previous_completed else "locked"
                         )
                         previous_completed = previous_completed and bool(completed)
+        else:
+            cache.set(cache_key, data, self.PUBLIC_CATALOG_CACHE_SECONDS)
 
         return Response(data)
 

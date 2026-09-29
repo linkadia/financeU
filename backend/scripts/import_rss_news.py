@@ -6,7 +6,7 @@ import re
 import sys
 import warnings
 import xml.etree.ElementTree as ET
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 import time  
@@ -32,7 +32,7 @@ from content.models import NewsArticle  # noqa: E402
 
 
 DEFAULT_XML_PATH = Path(__file__).with_name("rss_output.xml")
-DEFAULT_MIN_PUBLISHED_AT = date.today().replace(day=1).strftime("%Y-%m-%d")
+DEFAULT_LOOKBACK_HOURS = 24
 RSS_URLS = [
     "https://www.coindesk.com/arc/outboundfeeds/rss",
     "https://cointelegraph.com/rss",
@@ -243,7 +243,7 @@ def clean_url(url):
 
 def parse_date(value):
     if not value:
-        return timezone.now()
+        return None
 
     try:
         parsed = parsedate_to_datetime(value)
@@ -251,7 +251,7 @@ def parse_date(value):
         try:
             parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
         except ValueError:
-            return timezone.now()
+            return None
 
     if timezone.is_naive(parsed):
         return timezone.make_aware(parsed, timezone.get_current_timezone())
@@ -561,7 +561,7 @@ def build_candidate_from_item(item, min_published_at, seen_hashes, seen_identity
     source_name = source_name or rss_source_url or "Unknown source"
     published_at = parse_date(child_text(item, "pubDate"))
 
-    if not headline:
+    if not headline or published_at is None:
         return None, "invalid"
 
     if min_published_at and published_at < min_published_at:
@@ -775,8 +775,11 @@ def main():
     parser.add_argument("--limit", type=int, default=None, help="Limita el numero de noticias a importar.")
     parser.add_argument(
         "--min-published-at",
-        default=os.getenv("NEWS_MIN_PUBLISHED_AT", DEFAULT_MIN_PUBLISHED_AT),
-        help="Skip RSS items published before this YYYY-MM-DD date.",
+        default=os.getenv("NEWS_MIN_PUBLISHED_AT"),
+        help=(
+            "Skip RSS items published before this YYYY-MM-DD date. "
+            "If omitted, only the last 24 hours are imported."
+        ),
     )
     parser.add_argument(
         "--from-existing-xml",
@@ -795,8 +798,15 @@ def main():
     if not args.from_existing_xml:
         download_unified_rss(xml_path)
 
-    min_published_at = parse_min_published_at(args.min_published_at)
-    print(f"Minimum publication date: {args.min_published_at}")
+    if args.min_published_at:
+        min_published_at = parse_min_published_at(args.min_published_at)
+        print(f"Minimum publication date: {args.min_published_at}")
+    else:
+        min_published_at = timezone.now() - timedelta(hours=DEFAULT_LOOKBACK_HOURS)
+        print(
+            f"Minimum publication date: last {DEFAULT_LOOKBACK_HOURS} hours "
+            f"({min_published_at.isoformat()})"
+        )
 
     import_items(
         xml_path,

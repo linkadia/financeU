@@ -117,7 +117,7 @@ Qué hace funcionalmente:
 
 El script usa deduplicación para evitar publicar la misma noticia varias veces. Si el LLM falla en una noticia concreta, usa una clasificación heurística básica para no bloquear todo el proceso.
 
-Por defecto solo importa noticias desde el primer día del mes actual. Se puede cambiar con:
+Por defecto solo importa noticias publicadas en las últimas 24 horas. Se puede sustituir esa ventana por una fecha mínima absoluta con:
 
 ```bash
 python scripts/import_rss_news.py --llm --min-published-at 2026-06-01
@@ -352,7 +352,7 @@ Notas:
 
 - El script RSS usa la misma `GOOGLE_API_KEY` cuando se ejecuta con `--llm`.
 - `NEWS_LLM_MODEL` permite elegir el modelo usado para traducir y clasificar noticias.
-- `NEWS_MIN_PUBLISHED_AT` es opcional. Si no se configura, el script usa el primer día del mes actual.
+- `NEWS_MIN_PUBLISHED_AT` es opcional. Si no se configura, el script usa una ventana móvil de las últimas 24 horas.
 
 ### `frontend/.env`
 

@@ -173,3 +173,38 @@ class RssDuplicateDetectionTests(TestCase):
 
         self.assertIsNone(candidate)
         self.assertEqual(status, "existing")
+
+    def test_rss_item_older_than_cutoff_is_rejected(self):
+        published_at = (
+            datetime.now(dt_timezone.utc) - timedelta(days=2)
+        ).strftime("%a, %d %b %Y %H:%M:%S GMT")
+        item = self.rss_item(
+            "Old market story",
+            "MarketWatch.com - MarketPulse",
+            published_at,
+            "https://example.com/old-market-story",
+        )
+
+        candidate, status = build_candidate_from_item(
+            item,
+            timezone.now() - timedelta(hours=24),
+            set(),
+            set(),
+        )
+
+        self.assertIsNone(candidate)
+        self.assertEqual(status, "old")
+
+    def test_rss_item_without_publication_date_is_rejected(self):
+        item = self.rss_item(
+            "Undated market story",
+            "MarketWatch.com - MarketPulse",
+            "Fri, 07 Feb 2025 20:26:00 GMT",
+            "https://example.com/undated-market-story",
+        )
+        item.remove(item.find("pubDate"))
+
+        candidate, status = build_candidate_from_item(item, timezone.now(), set(), set())
+
+        self.assertIsNone(candidate)
+        self.assertEqual(status, "invalid")

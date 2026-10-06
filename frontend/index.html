@@ -3,6 +3,54 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- Keep any future security bootstrap immediately before this consent block. -->
+    <script id="financu-consent-bootstrap">
+      (function (window, document) {
+        var config = {
+          cookieName: 'financu_cookie_consent',
+          policyVersion: '1.0'
+        };
+
+        window.__FINANCU_CONSENT_CONFIG__ = config;
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = window.gtag || function () {
+          window.dataLayer.push(arguments);
+        };
+
+        window.gtag('consent', 'default', {
+          analytics_storage: 'denied',
+          ad_storage: 'denied',
+          ad_user_data: 'denied',
+          ad_personalization: 'denied',
+          wait_for_update: 500
+        });
+
+        var consentCookie = document.cookie
+          .split('; ')
+          .find(function (entry) {
+            return entry.indexOf(config.cookieName + '=') === 0;
+          });
+
+        if (!consentCookie) return;
+
+        try {
+          var stored = JSON.parse(decodeURIComponent(consentCookie.slice(config.cookieName.length + 1)));
+
+          if (stored.version !== config.policyVersion || !stored.updatedAt) return;
+
+          window.gtag('consent', 'update', {
+            analytics_storage: stored.analytics ? 'granted' : 'denied',
+            ad_storage: stored.marketing ? 'granted' : 'denied',
+            ad_user_data: stored.marketing ? 'granted' : 'denied',
+            ad_personalization: stored.marketing ? 'granted' : 'denied'
+          });
+        } catch (_error) {
+          // Invalid consent cookies are ignored and the denied defaults remain active.
+        }
+      })(window, document);
+    </script>
+    <!-- The Vite plugin injects the official GTM snippet here only when VITE_GTM_ID is set. -->
+    <!-- FINANCU_GTM_HEAD -->
     <title>FinancU</title>
     <link rel="icon" type="image/png" href="/src/assets/icono.png" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -107,6 +155,7 @@
     </script>
   </head>
   <body>
+    <!-- FINANCU_GTM_NOSCRIPT -->
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

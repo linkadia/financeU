@@ -8,6 +8,7 @@ import OnboardingStep1 from "./pages/onboarding/OnboardingStep1";
 import OnboardingStep2 from "./pages/onboarding/OnboardingStep2";
 import OnboardingStep3 from "./pages/onboarding/OnboardingStep3";
 import SelectAgent from "./pages/onboarding/SelectAgent";
+import Privacy from "./pages/Privacy";
 import { getCurrentUser } from "./utils/session";
 
 function OnboardingRoute({ children }) {
@@ -37,6 +38,7 @@ export default function AppRouter() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/learn" element={<Learn />} />
       <Route path="/profile" element={<Profile />} />
+      <Route path="/privacy" element={<Privacy />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

@@ -16,9 +16,11 @@ COPY requirements.txt requirements-prod.txt ./
 RUN pip install --no-cache-dir -r requirements-prod.txt
 
 COPY . .
+RUN chmod +x /app/docker-entrypoint.sh
 
 RUN python manage.py collectstatic --noinput
 
 EXPOSE 8001
 
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["gunicorn", "finanu_backend.wsgi:application", "--bind", "0.0.0.0:8001", "--workers", "3"]

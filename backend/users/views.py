@@ -1,5 +1,7 @@
 import hashlib
 import hmac
+from copy import deepcopy
+from datetime import timedelta
 from urllib.parse import urlencode
 
 from django.conf import settings
@@ -16,6 +18,7 @@ from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle, User
 from rest_framework.views import APIView
 
 from .models import IntegrationEvent, SubscriptionEntitlement, UserProfile
+from .msisdn import FINGERPRINT_PREFIX, fingerprint_from_sha256
 from .serializers import (
     IntegrationSubscriptionEventSerializer,
     UserProfileSerializer,
@@ -72,17 +75,59 @@ def get_subscription_access_until(payload):
 
 def apply_customer_metadata(entitlement, payload):
     customer = payload.get("customer") or {}
-    entitlement.external_user_id = customer.get("external_user_id", "") or ""
-    entitlement.msisdn_hash = customer.get("msisdn_hash", "") or ""
-    entitlement.country = customer.get("country", "") or ""
+    if "external_user_id" in customer:
+        entitlement.external_user_id = customer.get("external_user_id") or ""
+    if "msisdn_hash" in customer:
+        fingerprint = fingerprint_from_sha256(customer["msisdn_hash"])
+        can_bind = True
+        if entitlement.user_id:
+            user = entitlement.user
+            if user.msisdn_hash and user.msisdn_hash != fingerprint:
+                can_bind = False
+            elif not user.msisdn_hash and UserProfile.objects.filter(
+                msisdn_hash=fingerprint
+            ).exclude(pk=user.pk).exists():
+                can_bind = False
+            elif not user.msisdn_hash and SubscriptionEntitlement.objects.filter(
+                msisdn_hash=fingerprint,
+                registered_at__isnull=False,
+            ).exclude(pk=entitlement.pk).exists():
+                can_bind = False
+            elif not user.msisdn_hash:
+                user.msisdn_hash = fingerprint
+                user.save(update_fields=["msisdn_hash"])
+        if can_bind:
+            entitlement.msisdn_hash = fingerprint
+    if "country" in customer:
+        entitlement.country = customer.get("country") or ""
+
+
+def redacted_event_payload(data):
+    payload = deepcopy(data)
+    customer = payload.get("customer")
+    if isinstance(customer, dict):
+        for key in tuple(customer):
+            if key.lower() in {"msisdn", "msisdn_hash", "mobile", "phone", "phone_number"}:
+                customer.pop(key)
+    return payload
 
 
 def activate_entitlement(entitlement, payload):
     signup_token = None
-    entitlement.access_until = get_subscription_access_until(payload)
+    access_until = get_subscription_access_until(payload)
     entitlement.cancelled_at = None
     entitlement.last_event_id = payload["event_id"]
     apply_customer_metadata(entitlement, payload)
+    if (
+        (payload.get("subscription") or {}).get("status") == "active"
+        and entitlement.msisdn_hash.startswith(FINGERPRINT_PREFIX)
+    ):
+        entitlement.payment_confirmed_at = payload["occurred_at"]
+        if not access_until:
+            computed_end = timezone.localtime(payload["occurred_at"]).date() + timedelta(days=7)
+            access_until = max(entitlement.access_until or computed_end, computed_end)
+    if access_until:
+        entitlement.access_until = access_until
 
     if entitlement.user_id:
         entitlement.status = SubscriptionEntitlement.STATUS_ACTIVE
@@ -111,6 +156,7 @@ def activate_entitlement(entitlement, payload):
             "signup_token_hash",
             "signup_token_created_at",
             "access_until",
+            "payment_confirmed_at",
             "cancelled_at",
             "external_user_id",
             "msisdn_hash",
@@ -123,7 +169,11 @@ def activate_entitlement(entitlement, payload):
 
 
 def cancel_entitlement(entitlement, payload):
-    access_until = get_subscription_access_until(payload) or timezone.localdate()
+    access_until = (
+        get_subscription_access_until(payload)
+        or entitlement.access_until
+        or timezone.localdate()
+    )
     entitlement.status = SubscriptionEntitlement.STATUS_CANCELLED
     entitlement.access_until = access_until
     entitlement.cancelled_at = payload["occurred_at"]
@@ -216,7 +266,7 @@ class IntegrationSubscriptionEventView(APIView):
                 tid=payload["tid"],
                 sid=payload["sid"],
                 occurred_at=payload["occurred_at"],
-                raw_payload=request.data,
+                raw_payload=redacted_event_payload(request.data),
                 status=IntegrationEvent.STATUS_PROCESSED,
                 action=action,
                 entitlement=entitlement,
@@ -260,6 +310,7 @@ class SignupTokenValidationView(APIView):
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
+    http_method_names = ["get", "post", "put", "patch", "head", "options"]
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
     throttle_classes = [AnonRateThrottle, UserRateThrottle, ScopedRateThrottle]

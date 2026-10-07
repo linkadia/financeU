@@ -34,6 +34,7 @@ class UserProfile(models.Model):
     username = models.CharField(max_length=80, unique=True, blank=True, null=True)
     email = models.EmailField(unique=True)
     display_name = models.CharField(max_length=120, blank=True)
+    msisdn_hash = models.CharField(max_length=67, unique=True, null=True, blank=True, editable=False)
     operator_token = models.CharField(max_length=255, blank=True, editable=False)
     integrator_tid = models.CharField(max_length=128, blank=True, db_index=True)
     integrator_sid = models.CharField(max_length=128, blank=True, db_index=True)
@@ -114,7 +115,9 @@ class SubscriptionEntitlement(models.Model):
     access_until = models.DateField(blank=True, null=True)
     cancelled_at = models.DateTimeField(blank=True, null=True)
     external_user_id = models.CharField(max_length=128, blank=True)
-    msisdn_hash = models.CharField(max_length=255, blank=True)
+    msisdn_hash = models.CharField(max_length=255, blank=True, db_index=True)
+    payment_confirmed_at = models.DateTimeField(blank=True, null=True)
+    registered_at = models.DateTimeField(blank=True, null=True)
     country = models.CharField(max_length=2, blank=True)
     last_event_id = models.CharField(max_length=128, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -160,21 +163,37 @@ class SubscriptionEntitlement(models.Model):
             return False
         if self.user_id:
             return False
+        if self.registered_at:
+            return False
         if not self.signup_token_hash:
             return False
-        if self.access_until and self.access_until < today:
+        if self.access_until and self.access_until <= today:
             return False
         return True
 
+    def can_be_used_for_mobile_signup(self, today=None):
+        today = today or timezone.localdate()
+        return (
+            self.status in (self.STATUS_PENDING_REGISTRATION, self.STATUS_CANCELLED)
+            and not self.user_id
+            and not self.registered_at
+            and bool(self.payment_confirmed_at)
+            and bool(self.access_until)
+            and today < self.access_until
+        )
+
     def mark_registered(self, user):
         self.user = user
-        self.status = self.STATUS_ACTIVE
+        if self.status != self.STATUS_CANCELLED:
+            self.status = self.STATUS_ACTIVE
         self.signup_token_hash = None
+        self.registered_at = timezone.now()
         self.save(
             update_fields=[
                 "user",
                 "status",
                 "signup_token_hash",
+                "registered_at",
                 "updated_at",
             ]
         )

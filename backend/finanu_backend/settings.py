@@ -21,6 +21,7 @@ DEBUG = getenv("DJANGO_DEBUG", "True").lower() == "true"
 DEFAULT_FROM_EMAIL = getenv("DEFAULT_FROM_EMAIL", "no-reply@finanu.local")
 FRONTEND_SIGNUP_URL = getenv("FRONTEND_SIGNUP_URL", "http://localhost:5173/signup")
 INTEGRATOR_WEBHOOK_SECRET = getenv("INTEGRATOR_WEBHOOK_SECRET", "")
+MSISDN_HMAC_KEY = getenv("MSISDN_HMAC_KEY", "")
 EMAIL_BACKEND = getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = getenv("EMAIL_HOST", "localhost")
 EMAIL_PORT = int(getenv("EMAIL_PORT", "25"))

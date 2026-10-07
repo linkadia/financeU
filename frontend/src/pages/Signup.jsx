@@ -15,9 +15,18 @@ import logoUrl from '../assets/logoFinancU.svg';
 const initialForm = {
   username: '',
   email: '',
+  msisdn: '',
   password: '',
   confirmPassword: '',
 };
+
+function normalizeMobile(value) {
+  let compact = value.replace(/[\s()\-]/g, '');
+  if (compact.startsWith('+48')) compact = compact.slice(1);
+  else if (compact.startsWith('0048')) compact = compact.slice(2);
+  else if (/^[0-9]{9}$/.test(compact)) compact = `48${compact}`;
+  return /^48[0-9]{9}$/.test(compact) ? compact : '';
+}
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -71,6 +80,13 @@ export default function Signup() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    const usingToken = tokenStatus === 'valid';
+    const mobile = usingToken ? '' : normalizeMobile(form.msisdn);
+    if (!usingToken && !mobile) {
+      setError(t('auth.mobileInvalid'));
+      return;
+    }
+
     if (form.password.length < 8) {
       setError(t('auth.passwordLength'));
       return;
@@ -84,12 +100,21 @@ export default function Signup() {
     setIsSubmitting(true);
 
     try {
-      const user = await createUserProfile({ ...form, signup_token: signupToken });
+      const user = await createUserProfile({
+        ...form,
+        signup_token: usingToken ? signupToken : undefined,
+        msisdn: usingToken ? undefined : mobile,
+      });
       setCurrentUser(user);
       clearPendingSignupToken();
       setError('');
       navigate('/onboarding/step1');
     } catch (requestError) {
+      if (requestError.code === 'invalid_signup_token') {
+        clearPendingSignupToken();
+        setStoredSignupToken('');
+        setTokenStatus('invalid');
+      }
       setError(translateApiError(requestError, t));
     } finally {
       setIsSubmitting(false);
@@ -123,7 +148,7 @@ export default function Signup() {
             {t('auth.signupTitle')}
           </h1>
           <p className="font-body-lg text-body-lg text-on-surface-variant">
-            {tokenStatus === 'valid' ? t('auth.signupSubtitle') : t('auth.signupTokenRequired')}
+            {tokenStatus === 'valid' ? t('auth.signupSubtitle') : t('auth.signupMobileSubtitle')}
           </p>
         </section>
 
@@ -133,18 +158,13 @@ export default function Signup() {
           </div>
         )}
 
-        {tokenStatus !== 'checking' && tokenStatus !== 'valid' && (
-          <div className="mt-8 w-full max-w-md rounded-xl border border-error/40 bg-error-container/30 px-5 py-4 text-center font-body-md text-body-md text-on-error-container" role="alert">
-            <p>
-              {tokenStatus === 'missing' ? t('auth.signupTokenMissing') : t('auth.signupTokenInvalid')}
-            </p>
-            <Link className="mt-4 inline-flex font-bold text-secondary hover:underline" to="/">
-              {t('auth.backToLogin')}
-            </Link>
+        {tokenStatus === 'invalid' && (
+          <div className="mt-8 w-full max-w-md rounded-xl border border-white/10 bg-surface-container-lowest px-5 py-4 text-center font-body-md text-body-md text-on-surface-variant" role="status">
+            {t('auth.signupTokenInvalidMobile')}
           </div>
         )}
 
-        {tokenStatus === 'valid' && (
+        {tokenStatus !== 'checking' && (
         <form className="mt-8 w-full max-w-md space-y-stack-md" onSubmit={handleSubmit}>
           <label className="block">
             <span className="sr-only">{t('auth.username')}</span>
@@ -177,6 +197,26 @@ export default function Signup() {
               />
             </span>
           </label>
+
+          {tokenStatus !== 'valid' && (
+            <label className="block">
+              <span className="sr-only">{t('auth.mobile')}</span>
+              <span className="group relative flex items-center rounded-xl border border-white/10 bg-surface-container-lowest transition-all duration-200 focus-within:border-secondary focus-within:shadow-[0_0_8px_rgba(255,186,60,0.2)]">
+                <span className="material-symbols-outlined absolute left-4 text-on-surface-variant">phone_iphone</span>
+                <input
+                  className="w-full border-none bg-transparent py-4 pl-12 pr-4 font-body-md text-on-surface placeholder:text-outline focus:ring-0"
+                  placeholder={t('auth.mobilePlaceholder')}
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  required
+                  value={form.msisdn}
+                  onChange={(event) => updateField('msisdn', event.target.value)}
+                />
+              </span>
+              <span className="mt-2 block text-sm text-on-surface-variant">{t('auth.mobileHint')}</span>
+            </label>
+          )}
 
           <div className="grid gap-gutter sm:grid-cols-2">
             <label className="block">

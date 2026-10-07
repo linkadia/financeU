@@ -37,7 +37,7 @@ export function validateSignupToken(token) {
   return request(`/users/signup-token/validate/?token=${encodeURIComponent(token)}`);
 }
 
-export function createUserProfile({ username, email, password, signup_token }) {
+export function createUserProfile({ username, email, password, signup_token, msisdn }) {
   return request('/users/profiles/', {
     method: 'POST',
     body: JSON.stringify({
@@ -46,6 +46,7 @@ export function createUserProfile({ username, email, password, signup_token }) {
       display_name: username,
       password,
       signup_token,
+      msisdn,
     }),
   });
 }

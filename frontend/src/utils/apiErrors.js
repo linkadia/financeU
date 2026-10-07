@@ -3,6 +3,7 @@ const FIELD_LABEL_KEYS = {
   email: 'auth.email',
   new_password: 'profile.newPassword',
   password: 'auth.password',
+  msisdn: 'auth.mobile',
   signup_token: 'auth.signupToken',
   username: 'auth.username',
 };

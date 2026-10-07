@@ -311,6 +311,8 @@ Ajusta estas variables a tu IP local:
 ```env
 DJANGO_DEBUG=True
 DJANGO_SECRET_KEY=dev-secret-key-change-in-production
+INTEGRATOR_WEBHOOK_SECRET=replace-with-shared-secret
+MSISDN_HMAC_KEY=replace-with-a-long-independent-secret
 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
 CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 CSRF_TRUSTED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
@@ -385,6 +387,8 @@ Ejemplo para `backend/.env.production` o para variables configuradas directament
 ```env
 DJANGO_DEBUG=False
 DJANGO_SECRET_KEY=replace-with-a-long-random-secret
+INTEGRATOR_WEBHOOK_SECRET=replace-with-shared-secret
+MSISDN_HMAC_KEY=replace-with-a-long-independent-secret
 DJANGO_ALLOWED_HOSTS=api.tudominio.com,tudominio.com
 CORS_ALLOWED_ORIGINS=https://tudominio.com,https://www.tudominio.com
 CSRF_TRUSTED_ORIGINS=https://tudominio.com,https://www.tudominio.com
@@ -434,14 +438,10 @@ docker run --env-file backend/.env.production -p 8001:8001 finanu-backend
 Con Docker Compose:
 
 ```bash
-docker compose -f docker-compose.production.example.yml up --build
+docker compose -f docker-compose.production.example.yml up --build -d
 ```
 
-Antes de servir trafico en produccion, ejecutar migraciones contra MySQL/RDS:
-
-```bash
-docker compose -f docker-compose.production.example.yml run --rm backend python manage.py migrate
-```
+Al iniciar el contenedor, `docker-entrypoint.sh` ejecuta `python manage.py migrate --noinput` con las variables de `backend/.env.production`. Gunicorn arranca solo si las migraciones terminan correctamente. En un reinicio posterior, Django comprueba las migraciones y no repite las ya aplicadas. Si el despliegue usa otra imagen o sobrescribe el entrypoint, esta automatización no se ejecutará.
 
 Crear superusuario si hace falta:
 

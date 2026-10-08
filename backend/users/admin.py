@@ -7,6 +7,7 @@ class UserProfileAdmin(admin.ModelAdmin):
     list_display = (
         "username",
         "email",
+        "has_mobile_fingerprint",
         "estado",
         "fecha_renovacion",
         "integrator_tid",
@@ -21,6 +22,11 @@ class UserProfileAdmin(admin.ModelAdmin):
         "integrator_tid",
         "integrator_sid",
     )
+    readonly_fields = ("msisdn_hash",)
+
+    @admin.display(boolean=True, description="Móvil asociado")
+    def has_mobile_fingerprint(self, obj):
+        return bool(obj.msisdn_hash)
 
 
 @admin.register(SubscriptionEntitlement)
@@ -28,6 +34,7 @@ class SubscriptionEntitlementAdmin(admin.ModelAdmin):
     list_display = (
         "tid",
         "sid",
+        "has_mobile_fingerprint",
         "status",
         "user",
         "access_until",
@@ -39,11 +46,16 @@ class SubscriptionEntitlementAdmin(admin.ModelAdmin):
     search_fields = ("tid", "sid", "external_user_id", "msisdn_hash", "last_event_id")
     readonly_fields = (
         "public_id",
+        "msisdn_hash",
         "signup_token_hash",
         "signup_token_created_at",
         "created_at",
         "updated_at",
     )
+
+    @admin.display(boolean=True, description="Móvil recibido")
+    def has_mobile_fingerprint(self, obj):
+        return bool(obj.msisdn_hash)
 
 
 @admin.register(IntegrationEvent)

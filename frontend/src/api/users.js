@@ -62,6 +62,10 @@ export function getUserSettings(userId) {
   return request(`/users/profiles/${userId}/settings/`);
 }
 
+export function getSubscriptionStatus(userId) {
+  return request(`/users/profiles/${userId}/subscription-status/`);
+}
+
 export function updateUserSettings(userId, settings) {
   return request(`/users/profiles/${userId}/settings/`, {
     method: 'PATCH',

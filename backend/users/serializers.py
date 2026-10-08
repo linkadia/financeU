@@ -166,7 +166,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
                     if entitlement.status == SubscriptionEntitlement.STATUS_CANCELLED
                     else UserProfile.STATUS_ACTIVE
                 )
-                if entitlement.access_until:
+                if entitlement.status == SubscriptionEntitlement.STATUS_CANCELLED:
                     validated_data["fecha_renovacion"] = entitlement.access_until
 
                 profile = super().create(validated_data)

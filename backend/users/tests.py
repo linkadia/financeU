@@ -14,7 +14,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from .models import IntegrationEvent, SubscriptionEntitlement, UserProfile
+from .models import IntegrationEvent, SubscriptionEntitlement, UserProfile, add_month
 from .msisdn import fingerprint_from_sha256, sha256_msisdn
 
 
@@ -34,7 +34,7 @@ def base_subscription_event(**overrides):
     payload = {
         "event_id": "int_evt_20260709_000001",
         "event_type": "created",
-        "occurred_at": "2026-07-09T10:30:00Z",
+        "occurred_at": timezone.now().isoformat(),
         "operator": "test-operator",
         "integrator": "test-integrator",
         "service": "financu",
@@ -203,6 +203,55 @@ class IntegrationSubscriptionEventTests(TestCase):
         )
         self.assertEqual(reuse_response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @override_settings(MSISDN_HMAC_KEY="")
+    def test_token_operator_without_mobile_supports_monthly_subscription_lifecycle(self):
+        payload = base_subscription_event(
+            occurred_at="2026-10-08T10:00:00Z",
+            operator="other-operator",
+            customer={},
+        )
+        created = self.post_event(payload)
+        self.assertEqual(created.status_code, status.HTTP_200_OK)
+        with patch("users.models.timezone.localdate", return_value=date(2026, 10, 8)):
+            signup = self.client.post(reverse("profiles-list"), {
+                "username": "other-operator-token",
+                "email": "other-operator-token@example.com",
+                "password": "password123",
+                "signup_token": created.data["signup_token"],
+            }, format="json")
+        self.assertEqual(signup.status_code, status.HTTP_201_CREATED)
+        profile = UserProfile.objects.get(username="other-operator-token")
+        self.assertIsNone(profile.msisdn_hash)
+        self.assertIsNone(profile.fecha_renovacion)
+        self.assertEqual(profile.integrator_tid, payload["tid"])
+        self.assertEqual(profile.integrator_sid, payload["sid"])
+        entitlement = profile.subscription_entitlement
+        self.assertEqual(entitlement.msisdn_hash, "")
+        self.assertIsNotNone(entitlement.payment_confirmed_at)
+        self.assertEqual(entitlement.access_until, date(2026, 11, 8))
+
+        cancelled = self.post_event(base_subscription_event(
+            event_id="other-operator-cancel", event_type="cancelled",
+            occurred_at="2026-10-20T10:00:00Z",
+            subscription={"status": "cancelled"}, customer={},
+        ))
+        self.assertEqual(cancelled.status_code, status.HTTP_200_OK)
+        profile.refresh_from_db()
+        self.assertTrue(profile.can_access_platform(today=date(2026, 11, 7)))
+        self.assertFalse(profile.can_access_platform(today=date(2026, 11, 8)))
+
+        renewed = self.post_event(base_subscription_event(
+            event_id="other-operator-new-payment", event_type="renewed",
+            occurred_at="2026-11-10T10:00:00Z", customer={},
+        ))
+        self.assertEqual(renewed.status_code, status.HTTP_200_OK)
+        profile.refresh_from_db()
+        self.assertEqual(profile.estado, UserProfile.STATUS_ACTIVE)
+        self.assertIsNone(profile.fecha_renovacion)
+        self.assertIsNone(profile.msisdn_hash)
+        self.assertTrue(profile.can_access_platform(today=date(2027, 11, 10)))
+        self.assertEqual(UserProfile.objects.filter(integrator_tid=payload["tid"]).count(), 1)
+
     def test_signup_token_validation_endpoint(self):
         created_response = self.post_event(base_subscription_event())
         signup_token = created_response.data["signup_token"]
@@ -260,10 +309,36 @@ class IntegrationSubscriptionEventTests(TestCase):
         ).hexdigest()
         self.assertEqual(entitlement.msisdn_hash, expected)
         self.assertNotEqual(entitlement.msisdn_hash, MOBILE_SHA256)
-        self.assertEqual(entitlement.access_until, timezone.localdate() + timedelta(days=7))
+        self.assertEqual(entitlement.access_until, add_month(timezone.localdate()))
         self.assertIsNotNone(entitlement.payment_confirmed_at)
         self.assertNotIn(MOBILE_SHA256, str(IntegrationEvent.objects.get().raw_payload))
         self.assertNotIn(MOBILE_SHA256, str(response.data))
+
+    def test_mobile_payment_defaults_to_calendar_month(self):
+        for index, (occurred_at, expected_end) in enumerate((
+            ("2026-10-08T10:44:42Z", date(2026, 11, 8)),
+            ("2026-01-31T10:00:00Z", date(2026, 2, 28)),
+            ("2028-01-31T10:00:00Z", date(2028, 2, 29)),
+            ("2026-12-31T10:00:00Z", date(2027, 1, 31)),
+        )):
+            with self.subTest(occurred_at=occurred_at):
+                response = self.post_event(mobile_subscription_event(
+                    event_id=f"monthly-event-{index}",
+                    tid=f"MONTHLY-TID-{index}",
+                    occurred_at=occurred_at,
+                ))
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                entitlement = SubscriptionEntitlement.objects.get(tid=f"MONTHLY-TID-{index}")
+                self.assertEqual(entitlement.access_until, expected_end)
+
+    def test_explicit_paid_period_overrides_monthly_default(self):
+        response = self.post_event(mobile_subscription_event(
+            subscription={"status": "active", "access_until": "2026-11-20"},
+            occurred_at="2026-10-08T10:44:42Z",
+        ))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        entitlement = SubscriptionEntitlement.objects.get(tid="MOBILE-TID-001")
+        self.assertEqual(entitlement.access_until, date(2026, 11, 20))
 
     def test_invalid_mobile_hash_and_missing_hmac_key_fail_closed(self):
         invalid = mobile_subscription_event(
@@ -295,6 +370,7 @@ class IntegrationSubscriptionEventTests(TestCase):
         profile = UserProfile.objects.get(username="cliente-mobile")
         entitlement = profile.subscription_entitlement
         self.assertEqual(profile.msisdn_hash, fingerprint_from_sha256(MOBILE_SHA256))
+        self.assertIsNone(profile.fecha_renovacion)
         self.assertEqual(entitlement.status, SubscriptionEntitlement.STATUS_ACTIVE)
         self.assertIsNotNone(entitlement.registered_at)
         self.assertNotIn("msisdn_hash", signup.data)
@@ -412,6 +488,61 @@ class IntegrationSubscriptionEventTests(TestCase):
             fingerprint_from_sha256(MOBILE_SHA256),
         )
 
+    def test_cancelled_subscription_expires_then_new_payment_reactivates_user(self):
+        created = self.post_event(mobile_subscription_event(
+            occurred_at="2026-10-08T10:00:00Z",
+        ))
+        with patch("users.models.timezone.localdate", return_value=date(2026, 10, 8)):
+            signup = self.client.post(reverse("profiles-list"), {
+                "username": "monthly-cancel",
+                "email": "monthly-cancel@example.com",
+                "password": "password123",
+                "signup_token": created.data["signup_token"],
+            }, format="json")
+        self.assertEqual(signup.status_code, status.HTTP_201_CREATED)
+        profile = UserProfile.objects.get(username="monthly-cancel")
+        self.assertIsNone(profile.fecha_renovacion)
+        self.assertTrue(profile.can_access_platform(today=date(2027, 3, 1)))
+
+        cancel = mobile_subscription_event(
+            event_id="monthly-cancel-event",
+            event_type="cancelled",
+            occurred_at="2026-12-20T10:00:00Z",
+            subscription={"status": "cancelled"}, customer={},
+        )
+        self.assertEqual(self.post_event(cancel).status_code, status.HTTP_200_OK)
+        profile.refresh_from_db()
+        self.assertEqual(profile.fecha_renovacion, date(2027, 1, 8))
+        self.assertTrue(profile.can_access_platform(today=date(2027, 1, 7)))
+        self.assertFalse(profile.can_access_platform(today=date(2027, 1, 8)))
+
+        # Another cancellation must not extend the already cancelled period.
+        cancel.update(event_id="monthly-cancel-repeat", occurred_at="2027-02-01T10:00:00Z")
+        self.post_event(cancel)
+        profile.refresh_from_db()
+        self.assertEqual(profile.fecha_renovacion, date(2027, 1, 8))
+
+        renewed = mobile_subscription_event(
+            event_id="monthly-new-payment", event_type="renewed",
+            occurred_at="2027-02-03T10:00:00Z",
+        )
+        self.assertEqual(self.post_event(renewed).status_code, status.HTTP_200_OK)
+        profile.refresh_from_db()
+        self.assertEqual(profile.estado, UserProfile.STATUS_ACTIVE)
+        self.assertIsNone(profile.fecha_renovacion)
+        self.assertTrue(profile.can_access_platform(today=date(2028, 2, 3)))
+
+    def test_cancellation_keeps_month_end_billing_anchor(self):
+        self.post_event(mobile_subscription_event(occurred_at="2026-01-31T10:00:00Z"))
+        response = self.post_event(mobile_subscription_event(
+            event_id="month-end-cancel", event_type="cancelled",
+            occurred_at="2026-03-20T10:00:00Z",
+            subscription={"status": "cancelled"}, customer={},
+        ))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        entitlement = SubscriptionEntitlement.objects.get(tid="MOBILE-TID-001")
+        self.assertEqual(entitlement.access_until, date(2026, 3, 31))
+
     def test_profiles_cannot_be_deleted_through_api(self):
         profile = UserProfile.objects.create(
             username="keep-account",
@@ -525,14 +656,32 @@ class LoginSubscriptionTests(TestCase):
         self.assertEqual(response.data["error"], "subscription_inactive")
 
     @patch("users.models.timezone.localdate", return_value=date(2026, 6, 3))
-    def test_active_user_refreshes_renewal_from_previous_renewal_date(self, _localdate):
+    def test_active_user_can_login_regardless_of_previous_date(self, _localdate):
         profile = self.create_profile(fecha_renovacion=date(2026, 6, 1))
 
         response = self.login()
 
         profile.refresh_from_db()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(profile.fecha_renovacion, date(2026, 7, 1))
+        self.assertEqual(profile.fecha_renovacion, date(2026, 6, 1))
+
+    def test_active_user_has_indefinite_access(self):
+        self.create_profile(fecha_renovacion=None)
+        response = self.login()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data["fecha_renovacion"])
+
+    def test_cancelled_user_without_paid_period_is_blocked(self):
+        self.create_profile(estado=UserProfile.STATUS_INACTIVE, fecha_renovacion=None)
+        self.assertEqual(self.login().status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_subscription_status_reflects_expiry_for_existing_session(self):
+        profile = self.create_profile(estado=UserProfile.STATUS_INACTIVE)
+        url = reverse("profiles-subscription-status", args=[profile.id])
+        self.assertTrue(self.client.get(url).data["can_access"])
+        profile.fecha_renovacion = timezone.localdate()
+        profile.save(update_fields=["fecha_renovacion"])
+        self.assertFalse(self.client.get(url).data["can_access"])
 
 
 class PasswordResetRequestTests(TestCase):

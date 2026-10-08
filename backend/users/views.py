@@ -1,7 +1,6 @@
 import hashlib
 import hmac
 from copy import deepcopy
-from datetime import timedelta
 from urllib.parse import urlencode
 
 from django.conf import settings
@@ -17,7 +16,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
 
-from .models import IntegrationEvent, SubscriptionEntitlement, UserProfile
+from .models import IntegrationEvent, SubscriptionEntitlement, UserProfile, add_month
 from .msisdn import FINGERPRINT_PREFIX, fingerprint_from_sha256
 from .serializers import (
     IntegrationSubscriptionEventSerializer,
@@ -118,13 +117,10 @@ def activate_entitlement(entitlement, payload):
     entitlement.cancelled_at = None
     entitlement.last_event_id = payload["event_id"]
     apply_customer_metadata(entitlement, payload)
-    if (
-        (payload.get("subscription") or {}).get("status") == "active"
-        and entitlement.msisdn_hash.startswith(FINGERPRINT_PREFIX)
-    ):
+    if (payload.get("subscription") or {}).get("status") == "active":
         entitlement.payment_confirmed_at = payload["occurred_at"]
         if not access_until:
-            computed_end = timezone.localtime(payload["occurred_at"]).date() + timedelta(days=7)
+            computed_end = add_month(timezone.localtime(payload["occurred_at"]).date())
             access_until = max(entitlement.access_until or computed_end, computed_end)
     if access_until:
         entitlement.access_until = access_until
@@ -134,8 +130,7 @@ def activate_entitlement(entitlement, payload):
         entitlement.user.estado = UserProfile.STATUS_ACTIVE
         entitlement.user.integrator_tid = entitlement.tid
         entitlement.user.integrator_sid = entitlement.sid
-        if entitlement.access_until:
-            entitlement.user.fecha_renovacion = entitlement.access_until
+        entitlement.user.fecha_renovacion = None
         entitlement.user.save(
             update_fields=[
                 "estado",
@@ -169,10 +164,24 @@ def activate_entitlement(entitlement, payload):
 
 
 def cancel_entitlement(entitlement, payload):
+    cancellation_date = timezone.localtime(payload["occurred_at"]).date()
+    paid_until = entitlement.access_until
+    if entitlement.status != SubscriptionEntitlement.STATUS_CANCELLED:
+        if entitlement.payment_confirmed_at:
+            anchor = timezone.localtime(entitlement.payment_confirmed_at).date()
+        else:
+            anchor = paid_until
+        if anchor:
+            months = max(0, (cancellation_date.year - anchor.year) * 12
+                         + cancellation_date.month - anchor.month)
+            current_end = add_month(anchor, months)
+            if current_end <= cancellation_date:
+                current_end = add_month(anchor, months + 1)
+            paid_until = max(paid_until or current_end, current_end)
     access_until = (
         get_subscription_access_until(payload)
-        or entitlement.access_until
-        or timezone.localdate()
+        or paid_until
+        or cancellation_date
     )
     entitlement.status = SubscriptionEntitlement.STATUS_CANCELLED
     entitlement.access_until = access_until
@@ -328,6 +337,15 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         self.throttle_scope = self.throttle_scope_by_action.get(self.action, "profiles")
         return super().get_throttles()
 
+    @action(detail=True, methods=["get"], url_path="subscription-status")
+    def subscription_status(self, request, pk=None):
+        profile = self.get_object()
+        return Response({
+            "estado": profile.estado,
+            "fecha_renovacion": profile.fecha_renovacion,
+            "can_access": profile.can_access_platform(),
+        })
+
     @action(detail=True, methods=["get", "patch"], url_path="settings")
     def user_settings(self, request, pk=None):
         profile = self.get_object()
@@ -431,9 +449,6 @@ class LoginView(APIView):
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
-
-        if profile.refresh_renewal_date_if_active():
-            profile.save(update_fields=["fecha_renovacion"])
 
         return Response(
             {

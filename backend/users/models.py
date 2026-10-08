@@ -9,12 +9,9 @@ from django.db import models
 from django.utils import timezone
 
 
-def add_month(value):
-    month = value.month + 1
-    year = value.year
-    if month > 12:
-        month = 1
-        year += 1
+def add_month(value, months=1):
+    year, month_index = divmod(value.year * 12 + value.month - 1 + months, 12)
+    month = month_index + 1
     day = min(value.day, monthrange(year, month)[1])
     return value.replace(year=year, month=month, day=day)
 
@@ -45,7 +42,7 @@ class UserProfile(models.Model):
         default=STATUS_ACTIVE,
         db_index=True,
     )
-    fecha_renovacion = models.DateField(default=default_renewal_date)
+    fecha_renovacion = models.DateField(blank=True, null=True, default=None)
     onboarding_completed = models.BooleanField(default=False)
     onboarding_interests = models.JSONField(default=list, blank=True)
     onboarding_risk_profile = models.CharField(max_length=40, blank=True)
@@ -62,18 +59,9 @@ class UserProfile(models.Model):
 
     def can_access_platform(self, today=None):
         today = today or timezone.localdate()
-        return self.is_subscription_active or today < self.fecha_renovacion
-
-    def refresh_renewal_date_if_active(self, today=None):
-        today = today or timezone.localdate()
-        if not self.is_subscription_active:
-            return False
-
-        changed = False
-        while self.fecha_renovacion <= today:
-            self.fecha_renovacion = add_month(self.fecha_renovacion)
-            changed = True
-        return changed
+        return self.is_subscription_active or bool(
+            self.fecha_renovacion and today < self.fecha_renovacion
+        )
 
 
 class SubscriptionEntitlement(models.Model):

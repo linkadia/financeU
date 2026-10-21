@@ -262,3 +262,5 @@ market_latest.json
 *.swp
 .DS_Store
 Thumbs.db
+
+marketing/

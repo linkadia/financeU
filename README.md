@@ -809,6 +809,46 @@ python manage.py seed_learning_catalog
 
 `seed_learning_content` sigue disponible como alias del mismo comando.
 
+### Privacidad: historial de decisiones de cookies
+
+```text
+POST /api/privacy/cookie-consents/
+```
+
+El banner registra aceptar, rechazar y guardar preferencias. Cada navegador recibe un `consentId` aleatorio en la cookie `financu_cookie_consent`, conservado entre cambios durante sus 180 días de duración. Las cookies antiguas sin identificador vuelven a mostrar el aviso; sus elecciones anteriores no se reconstruyen como registros nuevos.
+
+Cada decisión genera un `event_id` UUID distinto. El cuerpo del POST incluye `event_id`, `consent_id`, `action` (`accept_all`, `reject_all` o `custom`), `analytics`, `marketing` (siempre `false`), `policy_version`, `language`, `page_path` y `client_recorded_at`. Aceptar activa únicamente analítica; rechazar la desactiva. Abrir o cancelar los ajustes no genera eventos.
+
+El servidor añade su fecha de recepción, la IP truncada a `/24` en IPv4 o `/48` en IPv6 y el user-agent limitado a 512 caracteres. No vincula el registro a una cuenta ni guarda parámetros o fragmentos de la URL. El endpoint permite POST antes del login y no ofrece una consulta pública del historial.
+
+- `201`: decisión nueva registrada.
+- `200`: reintento del mismo evento, con los mismos datos; devuelve el registro original.
+- `409`: el identificador del evento ya existe con datos distintos.
+- `400`: datos inválidos o categorías incompatibles con la acción.
+- `429`: límite de peticiones alcanzado, configurable mediante `DRF_COOKIE_CONSENT_RATE` (por defecto `120/hour`).
+
+La elección se aplica inmediatamente. Una cola local conserva como máximo las 10 decisiones pendientes más recientes y reintenta al abrir la aplicación, recuperar conexión o guardar otra decisión. Los fallos de red, `408`, `429` y errores del servidor quedan pendientes; los errores definitivos se descartan. Si el almacenamiento local está bloqueado, se intenta el envío directamente, sin garantía de reintento tras cerrar la página. Un mismo evento conserva su identificador durante todos sus reintentos.
+
+El historial está en `/admin/` → **Registros de consentimiento de cookies**, con búsqueda por `consent_id` o `event_id` y filtros por acción, categorías, política y fecha. El permiso de consulta permite ver lista y detalle; las altas y modificaciones manuales están deshabilitadas. La eliminación requiere el permiso correspondiente de Django. No se ha añadido un borrado automático; los registros del servidor son independientes de la caducidad de la cookie.
+
+Para actualizar el backend, aplicar las migraciones con el entorno y base de datos del despliegue:
+
+```bash
+python manage.py migrate --noinput
+```
+
+La migración `privacy.0001_initial` crea la tabla y la restricción única del evento. La imagen Docker existente ejecuta este comando al arrancar. Publicar el backend actualizado antes del frontend para que el endpoint esté disponible al recibir las primeras decisiones. El sistema de estilos continúa usando la configuración actual.
+
+Comprobaciones locales (los tests usan una base de datos aislada):
+
+```bash
+cd backend
+DB_ENGINE=sqlite REDIS_URL= .venv/bin/python manage.py test privacy --noinput
+DB_ENGINE=sqlite REDIS_URL= .venv/bin/python manage.py makemigrations --check --dry-run
+```
+
+En `frontend/`, ejecutar `npm test` y `npm run build`. En el navegador, verificar los tres tipos de decisión y sus registros en el admin, la reapertura de preferencias, los reintentos y que consultar la política no guarda ninguna decisión.
+
 ### Endpoints retirados
 
 Estos endpoints ya no forman parte del backend activo:

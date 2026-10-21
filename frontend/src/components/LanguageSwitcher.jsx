@@ -31,7 +31,7 @@ export default function LanguageSwitcher({ compact = false }) {
       className={`relative inline-flex items-center ${compact ? 'text-[12px]' : 'text-[13px]'}`}
     >
       <button
-        className="inline-flex min-w-16 items-center justify-between gap-1.5 rounded-full border border-white/10 bg-surface-container px-3 py-1.5 font-semibold leading-none text-on-surface shadow-sm transition-colors hover:bg-surface-container-high focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary"
+        className="inline-flex min-h-11 min-w-16 items-center justify-between gap-1.5 rounded-full border border-white/10 bg-surface-container px-3 py-1.5 font-semibold leading-none text-on-surface shadow-sm transition-colors hover:bg-surface-container-high focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary"
         type="button"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
@@ -53,7 +53,7 @@ export default function LanguageSwitcher({ compact = false }) {
           {languages.map((item) => (
             <button
               key={item.code}
-              className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary ${
+              className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary ${
                 language === item.code
                   ? 'bg-secondary text-on-secondary'
                   : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'

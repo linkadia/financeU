@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "marketdata",
     "subscriptions",
     "learning",
+    "privacy",
 ]
 
 WHITENOISE_AVAILABLE = find_spec("whitenoise") is not None
@@ -182,6 +183,7 @@ REST_FRAMEWORK = {
         "onboarding": getenv("DRF_ONBOARDING_RATE", "60/hour"),
         "password_reset": getenv("DRF_PASSWORD_RESET_RATE", "5/hour"),
         "integration_events": getenv("DRF_INTEGRATION_EVENTS_RATE", "120/minute"),
+        "cookie_consent": getenv("DRF_COOKIE_CONSENT_RATE", "120/hour"),
     },
     # Trust exactly one proxy/load balancer hop when resolving X-Forwarded-For.
     "NUM_PROXIES": int(getenv("DRF_NUM_PROXIES", "1")),

@@ -6,6 +6,7 @@ api_urls = [
     path("content/", include("content.urls")),
     path("learning/", include("learning.urls")),
     path("market/", include("marketdata.urls")),
+    path("privacy/", include("privacy.urls")),
 ]
 
 urlpatterns = [

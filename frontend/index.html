@@ -8,7 +8,7 @@
       (function (window, document) {
         var config = {
           cookieName: 'financu_cookie_consent',
-          policyVersion: '1.0'
+          policyVersion: '1.2'
         };
 
         window.__FINANCU_CONSENT_CONFIG__ = config;
@@ -40,6 +40,7 @@
           if (!stored || typeof stored.consentId !== 'string'
             || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(stored.consentId)
             || stored.version !== config.policyVersion || typeof stored.analytics !== 'boolean'
+            || stored.adsMeasurement !== false
             || typeof stored.updatedAt !== 'string' || !Number.isFinite(Date.parse(stored.updatedAt))) return;
 
           window.gtag('consent', 'update', {

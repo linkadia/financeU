@@ -53,6 +53,7 @@ export function recordConsent(stored, { action, language }) {
     consent_id: stored.consentId,
     action,
     analytics: stored.analytics,
+    ads_measurement: false,
     marketing: false,
     policy_version: stored.version,
     language,

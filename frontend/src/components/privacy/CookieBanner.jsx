@@ -92,10 +92,6 @@ export default function CookieBanner() {
             </div>
             <p id="cookie-analytics-description">{t('privacy.analyticsDescription')}</p>
           </div>
-          <div className="cookie-category cookie-category-inactive">
-            <div className="cookie-category-heading"><h3>{t('privacy.marketing')}</h3><span className="cookie-badge">{t('privacy.notUsed')}</span></div>
-            <p>{t('privacy.marketingDescription')}</p>
-          </div>
           <Link className="cookie-policy-link cookie-dialog-policy" onClick={() => closePreferences({ restore: false })} to="/privacy#cookies">{t('privacy.policyTitle')} <span aria-hidden="true">↗</span></Link>
         </div>
         <footer className="cookie-dialog-actions">

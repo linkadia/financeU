@@ -1,5 +1,5 @@
 const DEFAULT_COOKIE_NAME = 'financu_cookie_consent';
-const DEFAULT_POLICY_VERSION = '1.0';
+const DEFAULT_POLICY_VERSION = '1.2';
 const CONSENT_COOKIE_MAX_AGE = 60 * 60 * 24 * 180;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -26,6 +26,7 @@ function isConsentId(value) {
 
 export const EMPTY_PREFERENCES = Object.freeze({
   analytics: false,
+  adsMeasurement: false,
   marketing: false,
 });
 
@@ -40,6 +41,7 @@ function getConsentValues(preferences) {
 
 function normalisePreferences(value) {
   if (!value || !isConsentId(value.consentId) || value.version !== COOKIE_POLICY_VERSION || typeof value.analytics !== 'boolean'
+    || value.adsMeasurement !== false
     || typeof value.updatedAt !== 'string' || !Number.isFinite(Date.parse(value.updatedAt))) {
     return null;
   }
@@ -50,6 +52,7 @@ function normalisePreferences(value) {
     consentId: value.consentId,
     necessary: true,
     analytics: value.analytics,
+    adsMeasurement: false,
     marketing: false,
   };
 }
@@ -79,6 +82,7 @@ export function saveConsent(preferences, previousConsent = null) {
     consentId: isConsentId(previousId) ? previousId : generateConsentId(),
     necessary: true,
     analytics: preferences.analytics === true,
+    adsMeasurement: false,
     marketing: false,
   };
 
@@ -120,6 +124,7 @@ export function getPreferences(value = readStoredConsent()) {
 
   return {
     analytics: value.analytics === true,
+    adsMeasurement: false,
     marketing: false,
   };
 }

@@ -1,9 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { createUserProfile, validateSignupToken } from '../api/users';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useI18n } from '../i18n/I18nContext';
 import { translateApiError } from '../utils/apiErrors';
+import { useCookieConsent } from '../context/CookieConsentContext';
+import { createSignupTracker } from '../analytics/signup';
 import {
   clearPendingSignupToken,
   getPendingSignupToken,
@@ -32,6 +34,12 @@ export default function Signup() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { t } = useI18n();
+  const { consent } = useCookieConsent();
+  const analyticsConsentRef = useRef(false);
+  analyticsConsentRef.current = consent?.analytics === true;
+  const signupTrackerRef = useRef(null);
+  if (!signupTrackerRef.current) signupTrackerRef.current = createSignupTracker();
+  const submittingRef = useRef(false);
   const tokenFromUrl = useMemo(() => searchParams.get('token')?.trim() ?? '', [searchParams]);
   const [storedSignupToken, setStoredSignupToken] = useState(() => getPendingSignupToken());
   const signupToken = tokenFromUrl || storedSignupToken;
@@ -79,6 +87,7 @@ export default function Signup() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (submittingRef.current) return;
 
     const usingToken = tokenStatus === 'valid';
     const mobile = usingToken ? '' : normalizeMobile(form.msisdn);
@@ -97,6 +106,7 @@ export default function Signup() {
       return;
     }
 
+    submittingRef.current = true;
     setIsSubmitting(true);
 
     try {
@@ -108,6 +118,7 @@ export default function Signup() {
       setCurrentUser(user);
       clearPendingSignupToken();
       setError('');
+      signupTrackerRef.current({ analytics: analyticsConsentRef.current });
       navigate('/onboarding/step1');
     } catch (requestError) {
       if (requestError.code === 'invalid_signup_token') {
@@ -117,6 +128,7 @@ export default function Signup() {
       }
       setError(translateApiError(requestError, t));
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };

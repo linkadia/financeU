@@ -9,17 +9,18 @@ class CookieConsentRecordAdmin(admin.ModelAdmin):
         "consent_id",
         "action",
         "analytics",
+        "ads_measurement",
         "marketing",
         "policy_version",
         "language",
         "created_at",
     )
-    list_filter = ("action", "analytics", "marketing", "policy_version", "created_at")
+    list_filter = ("action", "analytics", "ads_measurement", "marketing", "policy_version", "created_at")
     search_fields = ("consent_id", "event_id")
     date_hierarchy = "created_at"
     readonly_fields = tuple(field.name for field in CookieConsentRecord._meta.fields)
     fieldsets = (
-        ("Decisión", {"fields": ("consent_id", "event_id", "action", "analytics", "marketing", "policy_version")}),
+        ("Decisión", {"fields": ("consent_id", "event_id", "action", "analytics", "ads_measurement", "marketing", "policy_version")}),
         ("Contexto", {"fields": ("language", "page_path", "client_recorded_at", "created_at", "ip_address", "user_agent")}),
     )
 

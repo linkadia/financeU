@@ -815,9 +815,13 @@ python manage.py seed_learning_catalog
 POST /api/privacy/cookie-consents/
 ```
 
-El banner registra aceptar, rechazar y guardar preferencias. Cada navegador recibe un `consentId` aleatorio en la cookie `financu_cookie_consent`, conservado entre cambios durante sus 180 días de duración. Las cookies antiguas sin identificador vuelven a mostrar el aviso; sus elecciones anteriores no se reconstruyen como registros nuevos.
+El banner registra aceptar, rechazar y guardar preferencias. Cada navegador recibe un `consentId` aleatorio en la cookie `financu_cookie_consent`, conservado entre cambios durante sus 180 días de duración. La política actual es `1.2`, con necesarias siempre activas y analítica opcional. Las cookies de versiones anteriores, sin identificador o con `adsMeasurement` distinto de `false` vuelven a mostrar el aviso, con todos los permisos opcionales denegados hasta una nueva elección. Se conserva cualquier `consentId` válido de la cookie anterior; sus elecciones no se reconstruyen como registros nuevos.
 
-Cada decisión genera un `event_id` UUID distinto. El cuerpo del POST incluye `event_id`, `consent_id`, `action` (`accept_all`, `reject_all` o `custom`), `analytics`, `marketing` (siempre `false`), `policy_version`, `language`, `page_path` y `client_recorded_at`. Aceptar activa únicamente analítica; rechazar la desactiva. Abrir o cancelar los ajustes no genera eventos.
+Cada decisión genera un `event_id` UUID distinto. El cuerpo del POST incluye `event_id`, `consent_id`, `action` (`accept_all`, `reject_all` o `custom`), `analytics`, `ads_measurement`, `marketing`, `policy_version`, `language`, `page_path` y `client_recorded_at`. Aceptar todo activa analítica; rechazar todo la desactiva. `ads_measurement` y `marketing` permanecen en `false`, como campos de compatibilidad del historial, y no aparecen como opciones del banner. Abrir o cancelar los ajustes no genera eventos.
+
+`analytics` controla `analytics_storage`. `ad_storage`, `ad_user_data` y `ad_personalization` permanecen siempre `denied` en esta aplicación, incluso ante preferencias antiguas o manipuladas. `adsMeasurement` y `marketing` se guardan como `false` en la cookie. El arranque anterior a GTM y las actualizaciones aplican la misma correspondencia. Se mantiene Consent Mode avanzado, por lo que Google puede recibir señales sin cookies cuando los permisos están denegados. Se sigue la [guía de Consent Mode de Google](https://developers.google.com/tag-platform/security/guides/consent). La política enlaza a la información sobre el uso de datos por Google desde su introducción.
+
+El endpoint admite las políticas `1.0`, `1.1` y `1.2`; rechaza las demás. `1.2` exige `ads_measurement: false` y valida la acción según analítica. Los eventos históricos `1.1` conservan sus categorías y validación anteriores: aceptar todo requiere analítica y medición publicitaria activas; rechazar todo requiere ambas desactivadas; configurar permite las cuatro combinaciones. `1.0` valida solo analítica y completa `ads_measurement` con `false` si falta. Así pueden llegar eventos pendientes del frontend anterior y reintentarse registros previos sin duplicarlos. La cola no cambia la versión, fecha, identificador ni contenido de los eventos históricos; estos registros no conceden permisos actuales a Google.
 
 El servidor añade su fecha de recepción, la IP truncada a `/24` en IPv4 o `/48` en IPv6 y el user-agent limitado a 512 caracteres. No vincula el registro a una cuenta ni guarda parámetros o fragmentos de la URL. El endpoint permite POST antes del login y no ofrece una consulta pública del historial.
 
@@ -837,7 +841,7 @@ Para actualizar el backend, aplicar las migraciones con el entorno y base de dat
 python manage.py migrate --noinput
 ```
 
-La migración `privacy.0001_initial` crea la tabla y la restricción única del evento. La imagen Docker existente ejecuta este comando al arrancar. Publicar el backend actualizado antes del frontend para que el endpoint esté disponible al recibir las primeras decisiones. El sistema de estilos continúa usando la configuración actual.
+La migración `privacy.0001_initial` crea la tabla y la restricción única del evento. `privacy.0002_cookieconsentrecord_ads_measurement` añade el campo histórico de medición publicitaria, con `false` para los registros anteriores. La imagen Docker existente ejecuta este comando al arrancar. Publicar primero el backend y completar la migración; después publicar el frontend `1.2`. Durante el despliegue, el backend seguirá aceptando eventos históricos `1.0` y `1.1`. Si `0002` ya está aplicada, `1.2` no necesita una migración adicional. El sistema de estilos continúa usando la configuración actual.
 
 Comprobaciones locales (los tests usan una base de datos aislada):
 
@@ -847,7 +851,23 @@ DB_ENGINE=sqlite REDIS_URL= .venv/bin/python manage.py test privacy --noinput
 DB_ENGINE=sqlite REDIS_URL= .venv/bin/python manage.py makemigrations --check --dry-run
 ```
 
-En `frontend/`, ejecutar `npm test` y `npm run build`. En el navegador, verificar los tres tipos de decisión y sus registros en el admin, la reapertura de preferencias, los reintentos y que consultar la política no guarda ninguna decisión.
+En `frontend/`, ejecutar `npm test` y `npm run build`. En el navegador, verificar aceptar/rechazar, guardar analítica activada o desactivada y sus registros en el admin; también la renovación de cookies `1.0`/`1.1`, que ningún permiso publicitario se conceda, la reapertura/cancelación de preferencias y los reintentos. Consultar la política no guarda ninguna decisión. Revisar móvil y escritorio, navegación con teclado y desplazamiento del panel con las acciones visibles.
+
+### Registro en el producto y separación de dominios
+
+Las campañas en Polonia aterrizan en `lkoneservice.com/dmfu2/` (operadores `TM`, `PA`, `PU`, `OR`). El pago se confirma allí antes de enviar al usuario a `financuinvestors.com`. La aplicación mide únicamente el registro completado en Analytics y Django; no envía conversiones a Google Ads ni necesita enlazar ambos dominios para atribución publicitaria.
+
+Django ya conserva el registro operativo en `UserProfile.created_at` y `SubscriptionEntitlement.registered_at`, una vez validada y consumida la suscripción elegible. No depende del consentimiento analítico ni necesita otra tabla de tracking. Tras la respuesta satisfactoria del alta, el frontend prepara `{ event: 'financu_sign_up', method: 'email' }` una sola vez por formulario, antes de navegar al onboarding y solo si sigue aceptada la analítica. El evento no se emite al enviar un formulario fallido, recargar o volver a entrar; no se recupera retroactivamente si el consentimiento llega después. No incluye email, teléfono, identificadores, token ni importe. Un fallo de tracking no interrumpe el registro.
+
+Configuración pendiente en GTM/GA4 (no publicada por este cambio):
+
+- Contenedor de la aplicación: `GTM-NV2H49ZG`. Flujo GA4: `G-F42XR6C80F` (propiedad `557584014`). En la revisión del 21/10/2026, la versión publicada del contenedor estaba vacía; la etiqueta de Google solo existía en el borrador. El flujo indicaba que no había recibido datos en las últimas 48 horas.
+- Conservar la etiqueta de Google del borrador para ese flujo y añadir una etiqueta **Google Analytics: evento de GA4** con nombre de evento `sign_up`, parámetro fijo `method = email` y activador de evento personalizado `financu_sign_up`. Exigir además `analytics_storage` para este evento, de modo que una revocación anterior a procesar la cola evite su envío.
+- Probar en Vista previa y DebugView un alta válida, un error, doble envío, rechazo y retirada de consentimiento durante el alta. Publicar tras desplegar el backend/frontend correspondiente. El evento preparado en código no aparecerá en Analytics hasta configurar y publicar la etiqueta.
+- Mantener la propiedad sin exportar este evento a Google Ads, sin audiencias de remarketing ni Google Signals para publicidad. El registro puede marcarse como evento clave de GA4 para informes internos.
+- Verificar que se mantienen ocultos los parámetros `token`, `email`, `user_id` y `account_id` en GA4 y que no se añaden datos personales a parámetros de eventos.
+
+La landing carga Google Ads `AW-18226103401` en la página revisada. Su consentimiento, conversiones de pago, avisos y verificaciones del anunciante deben revisarse por separado con el responsable de `lkoneservice.com`; el banner de la aplicación no gestiona ese dominio. No se ha modificado la landing ni su configuración publicitaria. Confirmar también las razones sociales: la landing muestra `NOVADIGITAL STUDIO 2 S.L.` y la política actual de la aplicación muestra `NOVADIGITAL STUDIO SLU`; no se deben unificar sin confirmar quién opera cada parte. Antes de publicar, conservar una copia de los textos y elecciones de cada versión de la política junto con su fecha de entrada en vigor.
 
 ### Endpoints retirados
 

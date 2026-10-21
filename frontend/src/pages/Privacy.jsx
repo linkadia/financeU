@@ -24,7 +24,6 @@ function CookieCategories({ t }) {
   const categories = [
     { name: t('privacy.essential'), purpose: t('privacy.essentialDescription'), status: t('privacy.alwaysActive'), retention: t('privacy.consentRetention') },
     { name: t('privacy.analytics'), purpose: t('privacy.analyticsDescription'), status: t('privacy.optional'), retention: t('privacy.analyticsRetention') },
-    { name: t('privacy.marketing'), purpose: t('privacy.marketingDescription'), status: t('privacy.notUsed'), retention: t('privacy.notApplicable') },
   ];
 
   return (
@@ -78,6 +77,7 @@ export default function Privacy() {
           <p className="cookie-eyebrow">FinancU · {t('privacy.bannerTitle')}</p>
           <h1>{t('privacy.policyTitle')}</h1>
           <p className="privacy-lead">{t('privacy.pageIntro')}</p>
+          <p className="privacy-lead"><a className="cookie-policy-link" href="https://business.safety.google/privacy/" rel="noopener noreferrer" target="_blank">{t('privacy.googleDataUse')}</a></p>
           <p className="privacy-date">{t('privacy.effectiveDate')}</p>
         </div>
         <div className="privacy-layout">

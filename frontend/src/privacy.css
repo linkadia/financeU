@@ -63,6 +63,7 @@
 .cookie-dialog-content > .cookie-copy { margin-bottom: 20px; }
 .cookie-category { padding: 14px 16px; margin-top: 12px; background: #16171a; border: 1px solid #ffffff14; border-radius: 12px; }
 .cookie-category-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.cookie-category-heading > h3 { flex: 1; min-width: 0; }
 .cookie-category h3, .privacy-cookie-card h3 { font-size: 15px; font-weight: 600; line-height: 1.5; margin: 0; }
 .cookie-category p { margin: 6px 0 0; color: #c7c1b7; font-size: 13px; line-height: 1.6; }
 .cookie-category-inactive { background: transparent; }

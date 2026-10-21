@@ -5,8 +5,9 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.cache import cache
-from django.db import IntegrityError, transaction
-from django.test import TestCase, override_settings
+from django.db import IntegrityError, connection, transaction
+from django.db.migrations.executor import MigrationExecutor
+from django.test import TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
@@ -22,8 +23,9 @@ def consent_payload(**overrides):
         "consent_id": str(uuid.uuid4()),
         "action": CookieConsentRecord.ACTION_ACCEPT_ALL,
         "analytics": True,
+        "ads_measurement": True,
         "marketing": False,
-        "policy_version": "1.0",
+        "policy_version": "1.1",
         "language": "pl",
         "page_path": "/dashboard",
         "client_recorded_at": "2026-10-20T09:30:00Z",
@@ -70,8 +72,9 @@ class CookieConsentRecordViewTests(TestCase):
         self.assertEqual(str(record.consent_id), payload["consent_id"])
         self.assertEqual(record.action, CookieConsentRecord.ACTION_ACCEPT_ALL)
         self.assertTrue(record.analytics)
+        self.assertTrue(record.ads_measurement)
         self.assertFalse(record.marketing)
-        self.assertEqual(record.policy_version, "1.0")
+        self.assertEqual(record.policy_version, "1.1")
         self.assertEqual(record.language, "pl")
         self.assertEqual(record.ip_address, "83.45.120.0")
         self.assertEqual(record.user_agent, "Mozilla/5.0 Test")
@@ -240,10 +243,85 @@ class CookieConsentReliabilityTests(TestCase):
 
     def test_reject_and_custom_choices_are_recorded(self):
         for action, analytics in (("reject_all", False), ("custom", False), ("custom", True)):
-            response = self.client.post(self.url, consent_payload(action=action, analytics=analytics), format="json")
+            response = self.client.post(self.url, consent_payload(action=action, analytics=analytics, ads_measurement=False), format="json")
             self.assertEqual(response.status_code, 201)
             self.assertEqual(response.data["analytics"], analytics)
             self.assertFalse(response.data["marketing"])
+
+    def test_custom_accepts_all_four_independent_category_combinations(self):
+        for analytics in (False, True):
+            for ads_measurement in (False, True):
+                with self.subTest(analytics=analytics, ads_measurement=ads_measurement):
+                    response = self.client.post(self.url, consent_payload(
+                        action="custom", analytics=analytics, ads_measurement=ads_measurement,
+                    ), format="json")
+                    self.assertEqual(response.status_code, 201)
+                    self.assertEqual(response.data["analytics"], analytics)
+                    self.assertEqual(response.data["ads_measurement"], ads_measurement)
+                    self.assertFalse(response.data["marketing"])
+
+    def test_accept_and_reject_require_both_categories_to_match(self):
+        for action, expected in (("accept_all", True), ("reject_all", False)):
+            for analytics in (False, True):
+                for ads_measurement in (False, True):
+                    with self.subTest(action=action, analytics=analytics, ads_measurement=ads_measurement):
+                        response = self.client.post(self.url, consent_payload(
+                            action=action, analytics=analytics, ads_measurement=ads_measurement,
+                        ), format="json")
+                        self.assertEqual(response.status_code, 201 if analytics == ads_measurement == expected else 400)
+
+    def test_policy_1_1_requires_explicit_advertising_measurement_choice(self):
+        for action in ("accept_all", "reject_all", "custom"):
+            payload = consent_payload(action=action, analytics=action == "accept_all")
+            payload.pop("ads_measurement")
+            response = self.client.post(self.url, payload, format="json")
+            self.assertEqual(response.status_code, 400)
+            self.assertIn("ads_measurement", response.data)
+        response = self.client.post(self.url, consent_payload(ads_measurement=None), format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_legacy_queued_events_retry_without_advertising_consent(self):
+        for action, analytics in (("accept_all", True), ("reject_all", False), ("custom", True), ("custom", False)):
+            payload = consent_payload(policy_version="1.0", action=action, analytics=analytics)
+            payload.pop("ads_measurement")
+            first = self.client.post(self.url, payload, format="json")
+            retry = self.client.post(self.url, payload, format="json")
+            explicit_retry = self.client.post(self.url, {**payload, "ads_measurement": False}, format="json")
+            self.assertEqual(first.status_code, 201)
+            self.assertEqual(retry.status_code, 200)
+            self.assertEqual(explicit_retry.status_code, 200)
+            self.assertEqual(first.data, retry.data)
+            self.assertFalse(first.data["ads_measurement"])
+        self.assertEqual(CookieConsentRecord.objects.count(), 4)
+
+    def test_retry_of_an_existing_legacy_record_remains_idempotent(self):
+        payload = consent_payload(policy_version="1.0")
+        payload.pop("ads_measurement")
+        CookieConsentRecord.objects.create(**payload)
+        response = self.client.post(self.url, payload, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.data["ads_measurement"])
+        self.assertEqual(CookieConsentRecord.objects.count(), 1)
+
+    def test_legacy_policy_cannot_grant_advertising_measurement_or_change_action_rules(self):
+        for overrides in ({"ads_measurement": True}, {"analytics": False, "ads_measurement": False}):
+            response = self.client.post(self.url, consent_payload(policy_version="1.0", **overrides), format="json")
+            self.assertEqual(response.status_code, 400)
+        self.assertFalse(CookieConsentRecord.objects.exists())
+
+    def test_unknown_policy_versions_are_rejected(self):
+        for version in ("", "0.9", "1.3", "future"):
+            response = self.client.post(self.url, consent_payload(policy_version=version), format="json")
+            self.assertEqual(response.status_code, 400)
+            self.assertIn("policy_version", response.data)
+
+    def test_changing_advertising_measurement_on_the_same_event_is_a_conflict(self):
+        payload = consent_payload(action="custom", analytics=False)
+        self.assertEqual(self.client.post(self.url, payload, format="json").status_code, 201)
+        response = self.client.post(self.url, {**payload, "ads_measurement": False}, format="json")
+        self.assertEqual(response.status_code, 409)
+        self.assertTrue(CookieConsentRecord.objects.get().ads_measurement)
+        self.assertEqual(CookieConsentRecord.objects.count(), 1)
 
     def test_external_or_protocol_relative_paths_are_rejected(self):
         for path in ("https://example.com/", "//example.com/path", "relative-path", "/\\example.com"):
@@ -302,6 +380,58 @@ class CookieConsentReliabilityTests(TestCase):
             )
 
 
+class CookieConsentAnalyticsOnlyTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.client = APIClient()
+        self.url = reverse("cookie-consent-records")
+
+    def test_current_policy_records_accept_reject_and_both_custom_analytics_choices(self):
+        for action, analytics in (("accept_all", True), ("reject_all", False), ("custom", True), ("custom", False)):
+            response = self.client.post(self.url, consent_payload(
+                policy_version="1.2", action=action, analytics=analytics, ads_measurement=False,
+            ), format="json")
+            self.assertEqual(response.status_code, 201)
+            self.assertEqual(response.data["analytics"], analytics)
+            self.assertFalse(response.data["ads_measurement"])
+            self.assertFalse(response.data["marketing"])
+
+    def test_current_policy_cannot_grant_advertising_for_any_action(self):
+        for action in ("accept_all", "reject_all", "custom"):
+            response = self.client.post(self.url, consent_payload(
+                policy_version="1.2", action=action, analytics=action == "accept_all", ads_measurement=True,
+            ), format="json")
+            self.assertEqual(response.status_code, 400)
+            self.assertIn("ads_measurement", response.data)
+        self.assertFalse(CookieConsentRecord.objects.exists())
+
+    def test_current_policy_requires_explicit_false_and_consistent_action(self):
+        for value in (None, "missing"):
+            payload = consent_payload(policy_version="1.2", ads_measurement=value)
+            if value == "missing":
+                payload.pop("ads_measurement")
+            response = self.client.post(self.url, payload, format="json")
+            self.assertEqual(response.status_code, 400)
+            self.assertIn("ads_measurement", response.data)
+        for action, analytics in (("accept_all", False), ("reject_all", True)):
+            response = self.client.post(self.url, consent_payload(
+                policy_version="1.2", action=action, analytics=analytics, ads_measurement=False,
+            ), format="json")
+            self.assertEqual(response.status_code, 400)
+            self.assertIn("action", response.data)
+
+    def test_current_choice_preserves_prior_policy_history_and_idempotent_retries(self):
+        previous = consent_payload()
+        self.assertEqual(self.client.post(self.url, previous, format="json").status_code, 201)
+        current = consent_payload(consent_id=previous["consent_id"], policy_version="1.2", ads_measurement=False)
+        self.assertEqual(self.client.post(self.url, current, format="json").status_code, 201)
+        self.assertEqual(self.client.post(self.url, current, format="json").status_code, 200)
+        self.assertEqual(self.client.post(self.url, previous, format="json").status_code, 200)
+        self.assertEqual(CookieConsentRecord.objects.count(), 2)
+        history = CookieConsentRecord.objects.order_by("id")
+        self.assertEqual([(row.policy_version, row.ads_measurement) for row in history], [("1.1", True), ("1.2", False)])
+
+
 @override_settings(STORAGES={
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
@@ -313,7 +443,7 @@ class CookieConsentAdminTests(TestCase):
         cls.viewer.user_permissions.add(Permission.objects.get(codename="view_cookieconsentrecord"))
         cls.record = CookieConsentRecord.objects.create(
             event_id=uuid.uuid4(), consent_id=uuid.uuid4(), action="custom", analytics=True,
-            marketing=False, policy_version="1.0", language="pl", page_path="/privacy",
+            ads_measurement=True, marketing=False, policy_version="1.1", language="pl", page_path="/privacy",
         )
 
     def setUp(self):
@@ -327,6 +457,19 @@ class CookieConsentAdminTests(TestCase):
         self.assertEqual(detail.status_code, 200)
         self.assertContains(detail, str(self.record.event_id))
         self.assertNotContains(detail, 'name="analytics"')
+        self.assertContains(detail, "Medición publicitaria")
+        self.assertNotContains(detail, 'name="ads_measurement"')
+
+    def test_advertising_measurement_is_visible_and_filterable(self):
+        other = CookieConsentRecord.objects.create(
+            event_id=uuid.uuid4(), consent_id=uuid.uuid4(), action="reject_all",
+            analytics=False, ads_measurement=False, marketing=False, policy_version="1.1",
+        )
+        listing = self.client.get(reverse("admin:privacy_cookieconsentrecord_changelist"), {"ads_measurement__exact": "1"})
+        self.assertEqual(listing.status_code, 200)
+        self.assertContains(listing, 'column-ads_measurement')
+        self.assertContains(listing, str(self.record.consent_id))
+        self.assertNotContains(listing, str(other.consent_id))
 
     def test_manual_additions_and_edits_are_forbidden(self):
         self.assertEqual(self.client.get(reverse("admin:privacy_cookieconsentrecord_add")).status_code, 403)
@@ -359,3 +502,28 @@ class CookieConsentAdminTests(TestCase):
         response = self.client.post(reverse("admin:privacy_cookieconsentrecord_delete", args=[self.record.pk]), {"post": "yes"})
         self.assertEqual(response.status_code, 302)
         self.assertFalse(CookieConsentRecord.objects.filter(pk=self.record.pk).exists())
+
+
+class CookieConsentMigrationTests(TransactionTestCase):
+    def test_existing_history_keeps_its_data_and_defaults_measurement_to_false(self):
+        old_target = [("privacy", "0001_initial")]
+        new_target = [("privacy", "0002_cookieconsentrecord_ads_measurement")]
+        executor = MigrationExecutor(connection)
+        executor.migrate(old_target)
+        try:
+            old_model = executor.loader.project_state(old_target).apps.get_model("privacy", "CookieConsentRecord")
+            event_id, consent_id = uuid.uuid4(), uuid.uuid4()
+            original = old_model.objects.create(
+                event_id=event_id, consent_id=consent_id, action="accept_all",
+                analytics=True, marketing=False, policy_version="1.0",
+            )
+            executor = MigrationExecutor(connection)
+            executor.migrate(new_target)
+            record = CookieConsentRecord.objects.get(event_id=event_id)
+            self.assertFalse(record.ads_measurement)
+            self.assertTrue(record.analytics)
+            self.assertEqual(record.consent_id, consent_id)
+            self.assertEqual(record.created_at, original.created_at)
+            self.assertEqual(record.policy_version, "1.0")
+        finally:
+            MigrationExecutor(connection).migrate(new_target)

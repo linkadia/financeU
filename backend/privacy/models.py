@@ -37,6 +37,7 @@ class CookieConsentRecord(models.Model):
     consent_id = models.UUIDField(db_index=True)
     action = models.CharField(max_length=20, choices=ACTION_CHOICES)
     analytics = models.BooleanField()
+    ads_measurement = models.BooleanField(default=False, verbose_name="Medición publicitaria")
     marketing = models.BooleanField()
     policy_version = models.CharField(max_length=20)
     language = models.CharField(max_length=10, blank=True)

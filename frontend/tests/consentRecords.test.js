@@ -6,7 +6,7 @@ import vm from 'node:vm';
 const source = readFileSync(new URL('../src/analytics/consentRecords.js', import.meta.url), 'utf8');
 const apiSource = readFileSync(new URL('../src/api/privacy.js', import.meta.url), 'utf8');
 const key = 'financu.pendingConsentRecords';
-const choice = { consentId: '8919f8e1-3065-4111-9eee-0754b30c14ff', analytics: true, marketing: false, version: '1.0', updatedAt: '2026-10-21T10:00:00.000Z' };
+const choice = { consentId: '8919f8e1-3065-4111-9eee-0754b30c14ff', analytics: true, adsMeasurement: false, marketing: false, version: '1.2', updatedAt: '2026-10-21T10:00:00.000Z' };
 const options = { action: 'accept_all', language: 'pl' };
 const plain = (value) => JSON.parse(JSON.stringify(value));
 const fail = (status) => Object.assign(new Error('Request failed'), { status });
@@ -35,7 +35,7 @@ test('a decision is queued before sending, includes its action, and contains onl
   await request;
   assert.deepEqual(calls[0], {
     event_id: '00000000-0000-4000-8000-000000000001', consent_id: choice.consentId,
-    action: 'accept_all', analytics: true, marketing: false, policy_version: '1.0',
+    action: 'accept_all', analytics: true, ads_measurement: false, marketing: false, policy_version: '1.2',
     language: 'pl', page_path: '/privacy', client_recorded_at: choice.updatedAt,
   });
   assert.deepEqual(pending(), []);
@@ -44,10 +44,11 @@ test('a decision is queued before sending, includes its action, and contains onl
 test('each action records the chosen categories with a distinct event identifier', async () => {
   const { api, calls } = recorder();
   await api.recordConsent(choice, options);
-  await api.recordConsent({ ...choice, analytics: false }, { ...options, action: 'reject_all' });
+  await api.recordConsent({ ...choice, analytics: false, adsMeasurement: false }, { ...options, action: 'reject_all' });
   await api.recordConsent({ ...choice, analytics: false }, { ...options, action: 'custom' });
   assert.deepEqual(calls.map(({ action }) => action), ['accept_all', 'reject_all', 'custom']);
   assert.deepEqual(calls.map(({ analytics }) => analytics), [true, false, false]);
+  assert.deepEqual(calls.map(({ ads_measurement }) => ads_measurement), [false, false, false]);
   assert.equal(new Set(calls.map(({ event_id }) => event_id)).size, 3);
   assert.equal(new Set(calls.map(({ consent_id }) => consent_id)).size, 1);
 });
@@ -102,7 +103,38 @@ test('a new decision queued during an in-flight request is preserved and sent', 
   await Promise.all([firstDecision, secondDecision]);
   assert.equal(calls.length, 2);
   assert.notEqual(calls[0].event_id, calls[1].event_id);
+  assert.deepEqual(calls.map(({ analytics, ads_measurement }) => [analytics, ads_measurement]), [[true, false], [false, false]]);
   assert.deepEqual(pending(), []);
+});
+
+test('legacy pending events retain their original version and payload alongside new decisions', async () => {
+  const legacy = {
+    event_id: '8919f8e1-3065-4111-9eee-0754b30c14aa', consent_id: choice.consentId,
+    action: 'accept_all', analytics: true, marketing: false, policy_version: '1.0',
+    language: 'en', page_path: '/', client_recorded_at: '2026-10-20T09:00:00Z',
+  };
+  const { api, calls, pending } = recorder({ storage: new Map([[key, JSON.stringify([legacy])]]) });
+  await api.recordConsent({ ...choice, analytics: false, adsMeasurement: true }, { action: 'custom', language: 'en' });
+  assert.deepEqual(calls[0], legacy);
+  assert.equal(calls[1].policy_version, '1.2');
+  assert.equal(calls[1].ads_measurement, false);
+  assert.equal(calls[1].consent_id, legacy.consent_id);
+  assert.notEqual(calls[1].event_id, legacy.event_id);
+  assert.deepEqual(pending(), []);
+});
+
+test('queued 1.1 advertising decisions keep their historical values while new events deny advertising', async () => {
+  const legacy = {
+    event_id: '8919f8e1-3065-4111-9eee-0754b30c14ab', consent_id: choice.consentId,
+    action: 'accept_all', analytics: true, ads_measurement: true, marketing: false, policy_version: '1.1',
+    language: 'en', page_path: '/', client_recorded_at: '2026-10-21T08:00:00Z',
+  };
+  const { api, calls } = recorder({ storage: new Map([[key, JSON.stringify([legacy])]]) });
+  await api.recordConsent({ ...choice, adsMeasurement: true, marketing: true }, options);
+  assert.deepEqual(calls[0], legacy);
+  assert.equal(calls[1].policy_version, '1.2');
+  assert.equal(calls[1].ads_measurement, false);
+  assert.equal(calls[1].marketing, false);
 });
 
 test('multiple flush triggers serialize delivery rather than sending the same pending event twice', async () => {

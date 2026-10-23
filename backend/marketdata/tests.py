@@ -9,10 +9,11 @@ from unittest.mock import patch
 from django.core.management import CommandError, call_command
 from django.test import TestCase
 
+from .catalog import DEFAULT_SYMBOLS, SERIES_DEFINITIONS
 from .models import FinancialDataRun, FinancialProduct, FinancialProductSnapshot
 from .serializers import ProductMarketSerializer
 from .services import import_market_data_from_gemini_payload
-from .management.commands.refresh_market_data_llm import parse_llm_json_payload
+from .management.commands.refresh_market_data_llm import build_market_prompt, parse_llm_json_payload
 
 
 class MarketDataSeedCommandTests(TestCase):
@@ -22,6 +23,80 @@ class MarketDataSeedCommandTests(TestCase):
         self.assertEqual(FinancialProduct.objects.count(), 32)
         self.assertFalse(FinancialProduct.objects.get(symbol="BTC").is_featured)
         self.assertFalse(FinancialProduct.objects.get(symbol="BNB").is_featured)
+
+    def test_catalog_uses_index_levels_and_quote_currency_units(self):
+        call_command("seed_financial_products")
+
+        for product in FinancialProduct.objects.filter(category="INDEX"):
+            with self.subTest(symbol=product.symbol):
+                self.assertEqual(product.subcategory, "STOCK_INDEX")
+                self.assertEqual(product.unit, "points")
+                self.assertEqual(ProductMarketSerializer(product, context={"lang": "pl"}).data["unit_label"], "pkt")
+        self.assertEqual(FinancialProduct.objects.get(symbol="PL_HPI").unit, "points")
+        for symbol in ("EURUSD", "GBPUSD"):
+            self.assertEqual(FinancialProduct.objects.get(symbol=symbol).unit, "USD")
+        for product in FinancialProduct.objects.all():
+            product.full_clean()
+
+    def test_frequency_and_comparison_match_the_underlying_series(self):
+        call_command("seed_financial_products")
+
+        for symbol in ("PL_HPI", "PL_GDP"):
+            product = FinancialProduct.objects.get(symbol=symbol)
+            self.assertEqual((product.update_frequency, product.data_granularity), ("QUARTERLY", "QUARTERLY"))
+            self.assertEqual(product.default_detail_en, "vs previous quarter")
+        for symbol in ("PL_10Y_BOND", "PL_DE_RISK_PREMIUM"):
+            product = FinancialProduct.objects.get(symbol=symbol)
+            self.assertEqual((product.update_frequency, product.data_granularity), ("DAILY", "DAILY_CLOSE"))
+        for symbol in ("PL_CPI", "PL_UNEMPLOYMENT", "EZ_CPI"):
+            self.assertEqual(FinancialProduct.objects.get(symbol=symbol).update_frequency, "MONTHLY")
+        btc = FinancialProduct.objects.get(symbol="BTC")
+        self.assertEqual(btc.default_detail_en, "vs 24 hours earlier")
+        self.assertEqual(btc.update_frequency, "DAILY")
+        for symbol in ("FED_RATE", "ECB_RATE", "PL_NBP_RATE"):
+            self.assertEqual(FinancialProduct.objects.get(symbol=symbol).update_frequency, "EVENT_BASED")
+
+    def test_reseeding_corrects_metadata_and_preserves_admin_flags_and_history(self):
+        call_command("seed_financial_products")
+        run = import_market_data_from_gemini_payload({
+            "ts": "2026-10-22T06:00:00Z", "st": "SUCCESS",
+            "cols": ["s", "v", "pv", "t", "pt", "src", "url", "q"],
+            "rows": [["PL_HPI", 240, 238, "2026-Q2", "2026-Q1", "GUS", None, True]],
+            "er": [],
+        })
+        product = FinancialProduct.objects.get(symbol="PL_HPI")
+        snapshot = FinancialProductSnapshot.objects.get()
+        original_snapshot = FinancialProductSnapshot.objects.values().get()
+        original_run = FinancialDataRun.objects.values().get()
+        FinancialProduct.objects.filter(pk=product.pk).update(
+            unit="%", update_frequency="MONTHLY", is_active=False, is_featured=True,
+        )
+
+        call_command("seed_financial_products")
+        call_command("seed_financial_products")
+
+        product.refresh_from_db()
+        self.assertEqual(product.unit, "points")
+        self.assertEqual(product.update_frequency, "QUARTERLY")
+        self.assertFalse(product.is_active)
+        self.assertTrue(product.is_featured)
+        self.assertEqual(FinancialProduct.objects.count(), 32)
+        self.assertEqual(FinancialProductSnapshot.objects.values().get(pk=snapshot.pk), original_snapshot)
+        self.assertEqual(FinancialDataRun.objects.values().get(pk=run.pk), original_run)
+
+    def test_search_prompt_covers_the_catalog_and_keeps_series_comparable(self):
+        self.assertEqual(set(DEFAULT_SYMBOLS), set(SERIES_DEFINITIONS))
+        prompt = build_market_prompt()
+        self.assertIn(",".join(DEFAULT_SYMBOLS), prompt)
+        self.assertIn("TARGET RANGE UPPER LIMIT", prompt)
+        self.assertIn("main refinancing operations", prompt)
+        self.assertIn("registered unemployment", prompt)
+
+        retry_prompt = build_market_prompt(["PL_HPI"])
+        self.assertIn("fixed base 2015=100", retry_prompt)
+        self.assertIn("preceding quarter on the same base", retry_prompt)
+        self.assertNotIn("* BTC:", retry_prompt)
+        self.assertNotIn("* FED_RATE:", retry_prompt)
 
 
 class MarketDataImportServiceTests(TestCase):
@@ -70,12 +145,10 @@ class MarketDataImportServiceTests(TestCase):
             ])
         )
 
-        snapshot = FinancialProductSnapshot.objects.get(product__symbol="ETH")
-        self.assertEqual(run.status, FinancialDataRun.Status.PARTIAL_SUCCESS)
-        self.assertEqual(run.items_imported, 1)
-        self.assertIsNone(snapshot.current_value)
-        self.assertEqual(snapshot.validation_status, FinancialProductSnapshot.ValidationStatus.PARTIAL)
-        self.assertIsNone(snapshot.quality_note)
+        self.assertEqual(run.status, FinancialDataRun.Status.FAILED)
+        self.assertEqual(run.items_failed, 1)
+        self.assertEqual(run.items_imported, 0)
+        self.assertFalse(FinancialProductSnapshot.objects.filter(product__symbol="ETH").exists())
 
     def test_monthly_and_quarterly_dates_are_parsed(self):
         import_market_data_from_gemini_payload(
@@ -153,7 +226,7 @@ class MarketDataImportServiceTests(TestCase):
 
         self.assertTrue(FinancialProduct.objects.get(symbol="XRP").is_featured)
 
-    def test_import_unfeatures_product_when_latest_snapshot_has_no_market_value(self):
+    def test_import_preserves_featured_product_when_new_value_is_missing(self):
         import_market_data_from_gemini_payload(
             self.payload([
                 ["XRP", 0.62, 0.60, "2026-06-01", "2026-05-31", "Example", None, None],
@@ -166,7 +239,8 @@ class MarketDataImportServiceTests(TestCase):
             ])
         )
 
-        self.assertFalse(FinancialProduct.objects.get(symbol="XRP").is_featured)
+        self.assertTrue(FinancialProduct.objects.get(symbol="XRP").is_featured)
+        self.assertEqual(FinancialProductSnapshot.objects.filter(product__symbol="XRP").count(), 1)
 
 
 class MarketDataSerializerTests(TestCase):
@@ -223,7 +297,10 @@ class FakeMarketLLMResponse:
             "ts": "2026-06-02",
             "st": "SUCCESS",
             "cols": ["s", "v", "pv", "t", "pt", "src", "url", "q"],
-            "rows": [["BTC", 100, 90, "2026-06-02", "2026-06-01", "Example", None, "0.9"]],
+            "rows": [
+                [symbol, 100, 90, "2026-06-02", "2026-06-01", "Example", None, 0.9]
+                for symbol in DEFAULT_SYMBOLS
+            ],
             "er": [],
         },
         separators=(",", ":"),
@@ -294,6 +371,7 @@ class RefreshMarketDataLLMCommandTests(TestCase):
             self.assertEqual(FakeMarketLLM.instances[0].kwargs["temperature"], 0)
             self.assertEqual(FakeMarketLLM.instances[0].kwargs["thinking_level"], "low")
             self.assertEqual(FakeMarketLLM.instances[0].kwargs["response_mime_type"], "application/json")
+            self.assertIn("prefixItems", FakeMarketLLM.instances[0].kwargs["response_schema"]["properties"]["rows"]["items"])
             self.assertEqual(FakeMarketLLM.instances[0].kwargs["google_api_key"], "test-api-key")
             self.assertEqual(
                 FakeMarketLLM.instances[0].bound_kwargs["tools"],
@@ -318,7 +396,7 @@ class RefreshMarketDataLLMCommandTests(TestCase):
             with patch.dict("os.environ", {"GOOGLE_API_KEY": "test-api-key"}):
                 call_command("refresh_market_data_llm", "--model", "test-market-model")
 
-        self.assertEqual(FinancialProductSnapshot.objects.count(), 1)
+        self.assertEqual(FinancialProductSnapshot.objects.count(), len(DEFAULT_SYMBOLS))
         snapshot = FinancialProductSnapshot.objects.get(product__symbol="BTC")
         self.assertEqual(snapshot.current_value, Decimal("100"))
         self.assertEqual(snapshot.run.raw_response["_meta"]["llm"]["model"], "test-market-model")

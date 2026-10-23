@@ -17,11 +17,12 @@ USABLE_SNAPSHOT_STATUSES = {
 
 
 def parse_decimal(value):
-    if value is None or value == "":
+    if value is None or value == "" or isinstance(value, bool):
         return None
 
     try:
-        return Decimal(str(value))
+        parsed = Decimal(str(value))
+        return parsed if parsed.is_finite() else None
     except (InvalidOperation, TypeError, ValueError):
         return None
 
@@ -57,6 +58,9 @@ def parse_temporal_value(value):
 def parse_quality(value):
     if value is None or value == "":
         return None, None
+
+    if isinstance(value, bool):
+        return Decimal(int(value)), None
 
     numeric = parse_decimal(value)
     if numeric is not None and Decimal("0") <= numeric <= Decimal("1"):
@@ -105,7 +109,14 @@ def snapshot_has_market_data(snapshot):
 def sync_featured_products_from_latest_snapshots():
     for product in FinancialProduct.objects.filter(is_active=True):
         latest_snapshot = (
-            product.snapshots.order_by("-effective_date", "-effective_datetime", "-created_at")
+            product.snapshots.filter(
+                validation_status__in=USABLE_SNAPSHOT_STATUSES,
+                current_value__isnull=False,
+                effective_date__isnull=False,
+                effective_at_raw__isnull=False,
+            ).exclude(
+                effective_at_raw="",
+            ).order_by("-effective_date", "-effective_datetime", "-created_at")
             .first()
         )
         should_be_featured = snapshot_has_market_data(latest_snapshot)
@@ -116,7 +127,7 @@ def sync_featured_products_from_latest_snapshots():
 
 
 @transaction.atomic
-def import_market_data_from_gemini_payload(payload: dict) -> FinancialDataRun:
+def import_market_data_from_gemini_payload(payload: dict, *, run=None, expected_symbols=None) -> FinancialDataRun:
     started_at = timezone.now()
     top_level_errors = []
 
@@ -138,15 +149,19 @@ def import_market_data_from_gemini_payload(payload: dict) -> FinancialDataRun:
 
     requested_at_raw, _, requested_at = parse_temporal_value(payload.get("ts"))
 
-    run = FinancialDataRun.objects.create(
-        started_at=started_at,
-        provider="gemini",
-        requested_at=requested_at,
-        items_expected=len(rows),
-        items_received=len(rows),
-        raw_response=payload,
-        errors=list(payload.get("er") or []) + top_level_errors,
-    )
+    if run is None:
+        run = FinancialDataRun(started_at=started_at, provider="gemini", requested_at=requested_at)
+    else:
+        # Keep the audit row created before the network request, outside this transaction.
+        run = FinancialDataRun.objects.select_for_update().get(pk=run.pk)
+
+    run.items_expected = len(expected_symbols) if expected_symbols is not None else len(rows)
+    run.items_received = len(rows)
+    run.raw_response = payload
+    run.errors = list(payload.get("er") or []) + top_level_errors
+    run.items_imported = run.items_updated = run.items_skipped = run.items_failed = 0
+    run.error_message = None
+    run.save()
 
     products_by_symbol = {
         product.symbol: product
@@ -163,6 +178,8 @@ def import_market_data_from_gemini_payload(payload: dict) -> FinancialDataRun:
 
     for index, raw_row in enumerate(rows):
         try:
+            if not isinstance(raw_row, list) or len(raw_row) != len(cols):
+                raise ValueError("Market data row must contain one value for each column")
             row = dict(zip(cols, raw_row))
             symbol = str(row.get("s") or "").strip().upper()
             product = products_by_symbol.get(symbol)
@@ -186,6 +203,18 @@ def import_market_data_from_gemini_payload(payload: dict) -> FinancialDataRun:
                 
             if effective_raw is None:
                 message = f"Missing effective_at for symbol {symbol}; snapshot was not created"
+                run.items_failed += 1
+                run.errors.append({"row": index, "symbol": symbol, "error": message, "raw_row": raw_row})
+                continue
+
+            if effective_date is None and effective_datetime is None:
+                message = f"Invalid effective_at for symbol {symbol}; snapshot was not created"
+                run.items_failed += 1
+                run.errors.append({"row": index, "symbol": symbol, "error": message, "raw_row": raw_row})
+                continue
+
+            if current_value is None:
+                message = f"Missing or invalid current_value for symbol {symbol}; snapshot was not created"
                 run.items_failed += 1
                 run.errors.append({"row": index, "symbol": symbol, "error": message, "raw_row": raw_row})
                 continue
@@ -237,6 +266,15 @@ def import_market_data_from_gemini_payload(payload: dict) -> FinancialDataRun:
             logger.exception(message)
             run.items_failed += 1
             run.errors.append({"row": index, "error": message, "raw_row": raw_row})
+
+    if expected_symbols is not None:
+        received_symbols = {
+            str(row[0]).strip().upper()
+            for row in rows if isinstance(row, list) and row
+        }
+        for symbol in sorted(set(expected_symbols) - received_symbols):
+            run.items_failed += 1
+            run.errors.append({"symbol": symbol, "error": f"Missing market data row for symbol {symbol}"})
 
     if run.items_imported == 0 and run.items_updated == 0:
         run.status = FinancialDataRun.Status.FAILED
